@@ -69,6 +69,8 @@
   .advbody{ border:1.5px solid #dde7d0; border-top:none; border-radius:0 0 12px 12px; padding:14px 18px; background:#fff; }
   .ckbox{ display:inline-flex; align-items:center; gap:6px; margin:0 18px 0 0; font-weight:normal; color:#2f3b2a; font-size:14px; cursor:pointer; }
   .ckbox input{ width:16px; height:16px; }
+  .footer{ text-align:center; margin-top:34px; padding:16px; border-top:1px solid #e0e8d4; font-size:13px; color:#6c8a52; line-height:2; }
+  .footer a{ color:#3f6b27; font-weight:bold; text-decoration:none; }
 </style>
 </head>
 <body>
@@ -132,12 +134,30 @@
       <div id="groups"></div>
       <button class="addbtn" id="addGroup">＋ グループを追加</button>
 
-      <label style="margin-top:16px;">近づけたいグループ <span class="hint">（助け合う子など。となり同士にします。1組まで4人）</span></label>
+      <label style="margin-top:16px;">近づけ方 <span class="hint">（チェックした位置を“となり”とみなす。複数OK）</span></label>
+      <div style="margin-bottom:12px;">
+        <label class="ckbox"><input type="checkbox" id="nearLR" checked> となり（左右）</label>
+        <label class="ckbox"><input type="checkbox" id="nearFB" checked> 前後</label>
+        <label class="ckbox"><input type="checkbox" id="nearDiag"> ななめ</label>
+      </div>
+      <label>近づけたいグループ <span class="hint">（助け合う子など。上の“となり”にします。1組まで4人）</span></label>
       <div id="closeGroups"></div>
       <button class="addbtn" id="addCloseGroup">＋ グループを追加</button>
 
+      <label style="margin-top:16px;">席を固定する <span class="hint">（この子をこの席に。たて1＝最前列。例：教卓の前）</span></label>
+      <div id="fixedRows"></div>
+      <button class="addbtn" id="addFixed">＋ 固定を追加</button>
+
       <label style="margin-top:16px;">前の方にしたい子 <span class="hint">（クリックで選択／視力・支援など）</span></label>
       <div class="chips" id="frontChips"></div>
+
+      <label style="margin-top:16px;">うまく収まらない時、どれを優先？ <span class="hint">（条件が多すぎる時の妥協の方針）</span></label>
+      <select id="priority" style="padding:6px 8px; border:1.5px solid #cfe0bb; border-radius:8px; font-size:14px; min-width:210px;">
+        <option value="balance">バランス（おまかせ）</option>
+        <option value="apart">離すを最優先</option>
+        <option value="close">近づけるを最優先</option>
+        <option value="front">前列を最優先</option>
+      </select>
     </div>
   </details>
 
@@ -151,6 +171,11 @@
   <div class="board-label">前（こくばん）</div>
   <div class="grid" id="grid"></div>
   <div class="back-label">うしろ</div>
+
+  <div class="footer">
+    「こんなツールが欲しい・ここを直して」のリクエストは <a href="https://line.me/R/ti/p/@171pmdrv" target="_blank" rel="noopener">公式LINE</a> へ🌱<br>
+    つくった人：<a href="https://x.com/sensei_support" target="_blank" rel="noopener">𝕏 たんく（@sensei_support）</a>
+  </div>
 </div>
 
 <script>
@@ -207,6 +232,31 @@ function readGroupsFrom(containerId){
   });
   return groups;
 }
+function addFixed(presetName,presetCol,presetRow){
+  const wrap=document.createElement("div"); wrap.className="group";
+  const sel=makeSelect(presetName); sel.classList.add("fxname"); wrap.appendChild(sel);
+  const t1=document.createElement("span"); t1.textContent=" を よこ"; wrap.appendChild(t1);
+  const colI=document.createElement("input"); colI.type="number"; colI.min=1; colI.value=presetCol||1; colI.className="fxcol"; colI.style.width="52px"; wrap.appendChild(colI);
+  const t2=document.createElement("span"); t2.textContent="列・たて"; wrap.appendChild(t2);
+  const rowI=document.createElement("input"); rowI.type="number"; rowI.min=1; rowI.value=presetRow||1; rowI.className="fxrow"; rowI.style.width="52px"; wrap.appendChild(rowI);
+  const t3=document.createElement("span"); t3.textContent="行目"; wrap.appendChild(t3);
+  const rm=document.createElement("button"); rm.className="rm"; rm.textContent="削除"; rm.onclick=()=>wrap.remove(); wrap.appendChild(rm);
+  $("fixedRows").appendChild(wrap);
+}
+function readFixed(cols,rows){
+  const list=[], seen=new Set(), errors=[];
+  document.querySelectorAll("#fixedRows .group").forEach(w=>{
+    const name=w.querySelector(".fxname").value;
+    const c=parseInt(w.querySelector(".fxcol").value)||0;
+    const r=parseInt(w.querySelector(".fxrow").value)||0;
+    if(!name) return;
+    if(c<1||c>cols||r<1||r>rows){ errors.push(`${name}（よこ${c}・たて${r}は範囲外。今はよこ${cols}・たて${rows}まで）`); return; }
+    const idx=(r-1)*cols+(c-1);
+    if(seen.has(idx)){ errors.push(`${name}（席が他の固定とかぶっています）`); return; }
+    seen.add(idx); list.push({name,idx});
+  });
+  return {list,errors};
+}
 
 /* ---- 配置ロジック ---- */
 function isClose(i,j,cols,m){
@@ -229,15 +279,15 @@ function buildInactive(total,cols,rows,empties){
   }
   return inactive;
 }
-function neighbors(i,cols,rows){
+function neighborsM(i,cols,rows,m){
   const r=Math.floor(i/cols),c=i%cols,out=[];
-  if(c>0)out.push(i-1); if(c<cols-1)out.push(i+1);
-  if(r>0)out.push(i-cols); if(r<rows-1)out.push(i+cols);
+  if(m.lr){ if(c>0)out.push(i-1); if(c<cols-1)out.push(i+1); }
+  if(m.fb){ if(r>0)out.push(i-cols); if(r<rows-1)out.push(i+cols); }
+  if(m.diag){ if(r>0&&c>0)out.push(i-cols-1); if(r>0&&c<cols-1)out.push(i-cols+1); if(r<rows-1&&c>0)out.push(i+cols-1); if(r<rows-1&&c<cols-1)out.push(i+cols+1); }
   return out;
 }
-function orthoAdj(i,j,cols){ const dr=Math.abs(Math.floor(i/cols)-Math.floor(j/cols)),dc=Math.abs(i%cols-j%cols); return (dr===0&&dc===1)||(dc===0&&dr===1); }
-// 近づけたいグループ：となり合う席のかたまりを探して置く
-function placeCluster(seats,activeSet,size,cols,rows){
+// 近づけたいグループ：となり合う席のかたまりを探して置く（近づけ方modesに従う）
+function placeCluster(seats,activeSet,size,cols,rows,m){
   for(let t=0;t<60;t++){
     const free=[...activeSet].filter(i=>seats[i]===null);
     if(free.length<size) return null;
@@ -245,7 +295,7 @@ function placeCluster(seats,activeSet,size,cols,rows){
     const cluster=[seed],used=new Set([seed]);
     while(cluster.length<size){
       const frontier=[];
-      cluster.forEach(s=>neighbors(s,cols,rows).forEach(nb=>{ if(activeSet.has(nb)&&seats[nb]===null&&!used.has(nb)) frontier.push(nb); }));
+      cluster.forEach(s=>neighborsM(s,cols,rows,m).forEach(nb=>{ if(activeSet.has(nb)&&seats[nb]===null&&!used.has(nb)) frontier.push(nb); }));
       if(!frontier.length) break;
       const pick=frontier[Math.floor(Math.random()*frontier.length)];
       cluster.push(pick); used.add(pick);
@@ -254,48 +304,59 @@ function placeCluster(seats,activeSet,size,cols,rows){
   }
   return null;
 }
-function generate(names,cols,rows,apartGroups,closeGroups,frontSet,modes){
+const PRIO={ balance:{apart:2,close:1,front:1}, apart:{apart:50,close:1,front:1}, close:{apart:2,close:50,front:1}, front:{apart:2,close:1,front:50} };
+function generate(names,cols,rows,apartGroups,closeGroups,frontSet,apartModes,nearModes,fixed,priority){
   const total=cols*rows;
   const inactive=buildInactive(total,cols,rows,total-names.length);
+  const fixedSet=new Set(fixed.map(f=>f.idx));
+  fixed.forEach(f=>{ if(inactive.has(f.idx)){ inactive.delete(f.idx); // 固定席は必ず使う・代わりに後ろを欠けさせる
+    for(let i=total-1;i>=0;i--){ if(!inactive.has(i)&&i!==f.idx&&!fixedSet.has(i)){ inactive.add(i); break; } } } });
   const activeSeats=[]; for(let i=0;i<total;i++) if(!inactive.has(i)) activeSeats.push(i);
   const activeSet=new Set(activeSeats);
-  const frontList=names.filter(n=>frontSet.has(n));
+  const fixedNames=new Set(fixed.map(f=>f.name));
+  const frontList=names.filter(n=>frontSet.has(n) && !fixedNames.has(n));
   const neededFrontRows=Math.max(1,Math.ceil(frontList.length/cols));
+  const w=PRIO[priority]||PRIO.balance;
+  const has=(seats,n)=>seats.indexOf(n)>=0;
 
   function evalc(seats){
     const pos={}; seats.forEach((n,i)=>{ if(n) pos[n]=i; });
     let apartV=0;
-    apartGroups.forEach(g=>{ for(let i=0;i<g.length;i++)for(let j=i+1;j<g.length;j++){ const a=g[i],b=g[j]; if(pos[a]!=null&&pos[b]!=null&&isClose(pos[a],pos[b],cols,modes)) apartV++; }});
+    apartGroups.forEach(g=>{ for(let i=0;i<g.length;i++)for(let j=i+1;j<g.length;j++){ const a=g[i],b=g[j]; if(pos[a]!=null&&pos[b]!=null&&isClose(pos[a],pos[b],cols,apartModes)) apartV++; }});
     let closeV=0;
-    closeGroups.forEach(g=>g.forEach(a=>{ if(pos[a]==null) return; if(!g.some(b=>b!==a&&pos[b]!=null&&orthoAdj(pos[a],pos[b],cols))) closeV++; }));
-    return {pos,apartV,closeV};
+    closeGroups.forEach(g=>g.forEach(a=>{ if(pos[a]==null) return; if(!g.some(b=>b!==a&&pos[b]!=null&&isClose(pos[a],pos[b],cols,nearModes))) closeV++; }));
+    const frontV=frontList.filter(n=>pos[n]!=null && Math.floor(pos[n]/cols)!==0).length;
+    return {pos,apartV,closeV,frontV};
   }
 
   let best=null,bestScore=Infinity;
   for(let attempt=0;attempt<700;attempt++){
     const seats=new Array(total).fill(null);
-    [...closeGroups].sort((a,b)=>b.length-a.length).forEach(g=>{ // 近づけグループをかたまりで配置
-      const cl=placeCluster(seats,activeSet,g.length,cols,rows);
-      if(cl) g.forEach((n,k)=>seats[cl[k]]=n);
+    fixed.forEach(f=>{ seats[f.idx]=f.name; });
+    const placeClose=()=>[...closeGroups].sort((a,b)=>b.length-a.length).forEach(g=>{
+      const un=g.filter(n=>!has(seats,n)); if(!un.length) return;
+      const cl=placeCluster(seats,activeSet,un.length,cols,rows,nearModes);
+      if(cl) un.forEach((n,k)=>seats[cl[k]]=n);
     });
-    const placed1=new Set(seats.filter(Boolean)); // 前列希望（未配置のみ）を前へ
-    const frontRem=frontList.filter(n=>!placed1.has(n));
-    const frontFree=activeSeats.filter(i=>seats[i]===null && Math.floor(i/cols)<neededFrontRows);
-    shuffle(frontFree).slice(0,frontRem.length).forEach((idx,k)=>seats[idx]=frontRem[k]);
-    const placed2=new Set(seats.filter(Boolean)); // 残り全員
-    const rest=names.filter(n=>!placed2.has(n));
-    const freeRest=activeSeats.filter(i=>seats[i]===null);
-    shuffle(freeRest).slice(0,rest.length).forEach((idx,k)=>seats[idx]=rest[k]);
-    const {apartV,closeV}=evalc(seats);
-    const score=apartV*2+closeV;
+    const placeFront=()=>{
+      const rem=frontList.filter(n=>!has(seats,n));
+      const free=activeSeats.filter(i=>seats[i]===null && Math.floor(i/cols)<neededFrontRows);
+      shuffle(free).slice(0,rem.length).forEach((idx,k)=>seats[idx]=rem[k]);
+    };
+    if(priority==='front'){ placeFront(); placeClose(); } else { placeClose(); placeFront(); }
+    const rest=names.filter(n=>!has(seats,n));
+    const free=activeSeats.filter(i=>seats[i]===null);
+    shuffle(free).slice(0,rest.length).forEach((idx,k)=>seats[idx]=rest[k]);
+    const e=evalc(seats);
+    const score=e.apartV*w.apart + e.closeV*w.close + e.frontV*w.front;
     if(score<bestScore){ bestScore=score; best=seats; }
     if(score===0) break;
   }
   const {pos}=evalc(best);
   const violPairs=[];
-  apartGroups.forEach(g=>{ for(let i=0;i<g.length;i++)for(let j=i+1;j<g.length;j++){ const a=g[i],b=g[j]; if(pos[a]!=null&&pos[b]!=null&&isClose(pos[a],pos[b],cols,modes)) violPairs.push([a,b]); }});
+  apartGroups.forEach(g=>{ for(let i=0;i<g.length;i++)for(let j=i+1;j<g.length;j++){ const a=g[i],b=g[j]; if(pos[a]!=null&&pos[b]!=null&&isClose(pos[a],pos[b],cols,apartModes)) violPairs.push([a,b]); }});
   const farGroups=[];
-  closeGroups.forEach(g=>{ const bad=g.some(a=>pos[a]!=null && !g.some(b=>b!==a&&pos[b]!=null&&orthoAdj(pos[a],pos[b],cols))); if(bad) farGroups.push(g); });
+  closeGroups.forEach(g=>{ const bad=g.some(a=>pos[a]!=null && !g.some(b=>b!==a&&pos[b]!=null&&isClose(pos[a],pos[b],cols,nearModes))); if(bad) farGroups.push(g); });
   const frontSpill=frontList.filter(n=>pos[n]!=null && Math.floor(pos[n]/cols)!==0);
   const clashNames=new Set(violPairs.flat());
   return {seats:best, violPairs, farGroups, frontSpill, clashNames, inactive};
@@ -325,8 +386,11 @@ function run(){
   const rows=Math.max(1, Math.ceil(names.length/cols)); // たては人数から自動
   const total=cols*rows;
 
-  const modes={ lr:$("avLR").checked, fb:$("avFB").checked, diag:$("avDiag").checked };
-  const {seats,violPairs,farGroups,frontSpill,clashNames,inactive}=generate(names,cols,rows,apartGroups,closeGroups,frontSelected,modes);
+  const apartModes={ lr:$("avLR").checked, fb:$("avFB").checked, diag:$("avDiag").checked };
+  const nearModes={ lr:$("nearLR").checked, fb:$("nearFB").checked, diag:$("nearDiag").checked };
+  const priority=$("priority").value;
+  const {list:fixed, errors:fixedErrors}=readFixed(cols,rows);
+  const {seats,violPairs,farGroups,frontSpill,clashNames,inactive}=generate(names,cols,rows,apartGroups,closeGroups,frontSelected,apartModes,nearModes,fixed,priority);
 
   $("go").disabled=true; $("again").disabled=true; msg.className=""; msg.textContent="シャッフル中…";
   let ticks=0; const pool=names.slice();
@@ -339,10 +403,13 @@ function run(){
       clearInterval(timer);
       render(seats,cols,frontSelected,false,clashNames,inactive);
       $("go").disabled=false; $("again").disabled=false;
-      if(violPairs.length===0 && farGroups.length===0 && frontSpill.length===0){
+      if(violPairs.length===0 && farGroups.length===0 && frontSpill.length===0 && fixedErrors.length===0){
         msg.className="ok"; msg.textContent="席替え完了！ 条件もぜんぶクリア🌱";
       } else {
         const parts=["席替えはできました。ただ、ぜんぶの条件は満たしきれませんでした👇"];
+        if(fixedErrors.length){
+          parts.push("◆ 固定できなかった：\n"+fixedErrors.map(e=>`　・${e}`).join("\n"));
+        }
         if(violPairs.length){
           parts.push("◆ 離しきれなかったペア（赤ワク）：\n"+violPairs.map(p=>`　・${p[0]} と ${p[1]}`).join("\n"));
         }
@@ -352,7 +419,7 @@ function run(){
         if(frontSpill.length){
           parts.push("◆ 前列きぼうが多くて、2列目になった子：\n"+frontSpill.map(n=>`　・${n}`).join("\n"));
         }
-        parts.push("人数が席数に近い／条件が多いと起きやすいです。たて・よこを増やすか、条件を1つ減らすと収まりやすくなります。");
+        parts.push("▶ 何を優先するか「うまく収まらない時、どれを優先？」で選んで、もう一度「席替え！」を押すと、その条件を優先して組み直します。\n（よこの人数を変えて席を広げる／条件を1つ減らす、も有効です）");
         msg.className="warn"; msg.textContent=parts.join("\n\n");
       }
     }
@@ -371,6 +438,7 @@ $("names").addEventListener("input", ()=>{ buildFrontChips(); rebuildGroupOption
 $("cols").addEventListener("input", updateLayoutInfo);
 $("addGroup").onclick=()=>addGroupTo("groups","この子たちを離す：");
 $("addCloseGroup").onclick=()=>addGroupTo("closeGroups","この子たちを近づける：");
+$("addFixed").onclick=()=>addFixed();
 $("go").onclick=run; $("again").onclick=run;
 
 buildFrontChips();
