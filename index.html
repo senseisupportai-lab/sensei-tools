@@ -10,7 +10,7 @@
 <style>
   * { box-sizing: border-box; }
   body { font-family:"Hiragino Sans","Hiragino Kaku Gothic ProN","Yu Gothic","Noto Sans JP",sans-serif;
-    margin:0; background:#f4f7f2; color:#2f3b2a; line-height:1.6; }
+    margin:0; background:linear-gradient(#f7faf3,#eef4e8); color:#2f3b2a; line-height:1.6; }
   .wrap { max-width:1000px; margin:0 auto; padding:20px 16px 60px; }
   h1 { font-size:24px; color:#3f6b27; margin:6px 0 2px; }
   .sub { color:#6c8a52; font-size:13px; margin-bottom:18px; }
@@ -50,7 +50,7 @@
   .grid { display:grid; gap:10px; }
   .seat { background:#fff; border:1.5px solid #d7e8c5; border-radius:12px; min-height:60px;
           display:flex; align-items:center; justify-content:center; font-size:16px; font-weight:bold;
-          color:#33402c; padding:6px; text-align:center; position:relative; }
+          color:#33402c; padding:6px; text-align:center; position:relative; box-shadow:0 2px 4px rgba(90,138,60,.10); }
   .seat.empty { background:#f0f3ec; color:#b9c4ac; font-weight:normal; border-style:dashed; }
   .seat.front { box-shadow: inset 0 -4px 0 #ffe08a; }
   .seat.clash { box-shadow: inset 0 0 0 2px #e88; }
@@ -58,7 +58,7 @@
   .back-label { text-align:center; color:#8a9a7c; font-size:12px; margin-top:12px; }
   .flick { background:#eef6e4; }
   /* ステップUI */
-  .step{ background:#fff; border:1.5px solid #dde7d0; border-radius:14px; padding:14px 18px; margin-bottom:14px; }
+  .step{ background:#fff; border:1.5px solid #dde7d0; border-radius:14px; padding:14px 18px; margin-bottom:14px; box-shadow:0 3px 10px rgba(90,138,60,.06); }
   .steptitle{ font-size:17px; font-weight:bold; color:#3f6b27; display:flex; align-items:center; margin-bottom:10px; }
   .stepnum{ display:inline-flex; width:28px; height:28px; background:#7fb35a; color:#fff; border-radius:50%;
             align-items:center; justify-content:center; font-weight:bold; margin-right:10px; flex:0 0 auto; }
@@ -80,6 +80,12 @@
   .about{ max-width:540px; margin:0 auto 14px; text-align:left; background:#fbfdf8; border:1px solid #e6edda;
           border-radius:10px; padding:11px 14px; font-size:12.5px; color:#5b6b50; line-height:1.95; }
   .about b{ color:#3f6b27; }
+  .hero{ text-align:center; margin:4px 0 20px; }
+  .heroimg{ width:240px; max-width:64%; border-radius:18px; box-shadow:0 4px 14px rgba(90,138,60,.12); }
+  .hero h1{ margin:12px 0 2px; }
+  .hero .tagline, .hero .sub{ margin-left:auto; margin-right:auto; }
+  .xtop{ margin:5px 0 0; font-size:13px; }
+  .xtop a{ color:#3f6b27; text-decoration:none; font-weight:bold; }
   @media (max-width:600px){
     .wrap{ padding:14px 10px 50px; }
     .seat{ min-height:48px; font-size:14px; }
@@ -89,10 +95,13 @@
 </head>
 <body>
 <div class="wrap">
-  <h1>🪑 席替えツール</h1>
-  <div class="tagline">子どもの情報を預からない。先生の手元だけで完結する席替えです。</div>
-  <div class="sub">名前を入れて、ボタンを押すだけ。たて（行）は人数に合わせて自動です。</div>
-  <div style="margin:-6px 0 16px; font-size:13px;"><a href="https://x.com/sensei_support" target="_blank" rel="noopener" style="color:#3f6b27; text-decoration:none; font-weight:bold;">𝕏 @sensei_support（つくった人：たんく）</a></div>
+  <div class="hero">
+    <img class="heroimg" src="hero.png" alt="">
+    <h1>🪑 席替えツール</h1>
+    <div class="tagline">子どもの情報を預からない。先生の手元だけで完結する席替えです。</div>
+    <div class="sub">名前を入れて、ボタンを押すだけ。たて（行）は人数に合わせて自動です。</div>
+    <div class="xtop"><a href="https://x.com/sensei_support" target="_blank" rel="noopener">𝕏 @sensei_support（つくった人：たんく）</a></div>
+  </div>
 
   <div class="step">
     <div class="steptitle"><span class="stepnum">1</span>クラスの名前を入れる</div>
