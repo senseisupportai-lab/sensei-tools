@@ -181,6 +181,11 @@
   <div style="overflow-x:auto;"><div class="grid" id="grid"></div></div>
   <div class="back-label">うしろ</div>
 
+  <div id="shareWrap" style="text-align:center; margin-top:16px; display:none;">
+    <button class="go ghost" id="shareX" style="font-size:13px;">𝕏 で感想を書く</button>
+    <div class="hint" style="margin-top:4px;">※感想だけ投稿されます（名前などの入力内容は含まれません）</div>
+  </div>
+
   <div style="text-align:center; margin-top:20px;">
     <button class="go ghost" id="exportBtn" style="font-size:13px;">📁 この席替えを控える</button>
     <button class="go ghost" id="importBtn" style="font-size:13px;">📂 控えから戻す</button>
@@ -442,6 +447,7 @@ function run(){
       }
       lastResult={ seats, cols, inactive:[...inactive], clash:[...clashNames], msgText:$("msg").textContent, msgClass:$("msg").className };
       persist();
+      if(userShuffled){ $("shareWrap").style.display="block"; } // 押して完成した後だけ控えめに表示
     }
   },90);
 }
@@ -456,7 +462,7 @@ function updateLayoutInfo(){
 }
 /* ---- 自動で残す（この端末のみ・送信なし） ---- */
 const LS_KEY="sekigae_v1";
-let restoring=false, lastResult=null;
+let restoring=false, lastResult=null, userShuffled=false;
 function rawFixed(){
   return [...document.querySelectorAll("#fixedRows .group")].map(w=>({
     name:w.querySelector(".fxname").value,
@@ -515,7 +521,12 @@ document.addEventListener("change", persist);
 $("addGroup").onclick=()=>addGroupTo("groups","この子たちを離す：");
 $("addCloseGroup").onclick=()=>addGroupTo("closeGroups","この子たちを近づける：");
 $("addFixed").onclick=()=>addFixed();
-$("go").onclick=run; $("again").onclick=run;
+$("go").onclick=()=>{ userShuffled=true; run(); };
+$("again").onclick=()=>{ userShuffled=true; run(); };
+$("shareX").onclick=()=>{
+  const text="【ここに感想をどうぞ】\n\n#せんせいサポート\nhttps://senseisupportai-lab.github.io/sensei-tools/\n@sensei_support";
+  window.open("https://twitter.com/intent/tweet?text="+encodeURIComponent(text),"_blank","noopener");
+};
 $("exportBtn").onclick=exportBackup;
 $("importBtn").onclick=()=>$("importFile").click();
 $("importFile").addEventListener("change", e=>{ if(e.target.files[0]) importBackup(e.target.files[0]); e.target.value=""; });
