@@ -3,6 +3,9 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#7fb35a">
+<link rel="apple-touch-icon" href="icon-192.png">
 <title>席替えツール</title>
 <style>
   * { box-sizing: border-box; }
@@ -71,6 +74,11 @@
   .ckbox input{ width:16px; height:16px; }
   .footer{ text-align:center; margin-top:34px; padding:16px; border-top:1px solid #e0e8d4; font-size:13px; color:#6c8a52; line-height:2; }
   .footer a{ color:#3f6b27; font-weight:bold; text-decoration:none; }
+  @media (max-width:600px){
+    .wrap{ padding:14px 10px 50px; }
+    .seat{ min-height:48px; font-size:14px; }
+    .step{ padding:12px 13px; }
+  }
 </style>
 </head>
 <body>
@@ -112,7 +120,8 @@
 りつ
 ねね</textarea>
     <div id="countInfo" style="margin-top:6px; font-size:14px; color:#3f6b27; font-weight:bold;"></div>
-    <div class="hint" style="margin-top:2px;">※サンプルが入っています。自分のクラスに置きかえてね。</div>
+    <div class="hint" style="margin-top:2px;">※はじめはサンプルが入っています。自分のクラスに置きかえてね。</div>
+    <div class="hint" style="margin-top:2px; color:#5a8a3c;">🔒 入力はこの端末の中だけに残ります（自動）。どこにも送信されません。</div>
   </div>
 
   <div class="step">
@@ -169,8 +178,15 @@
   <div id="msg"></div>
 
   <div class="board-label">前（こくばん）</div>
-  <div class="grid" id="grid"></div>
+  <div style="overflow-x:auto;"><div class="grid" id="grid"></div></div>
   <div class="back-label">うしろ</div>
+
+  <div style="text-align:center; margin-top:20px;">
+    <button class="go ghost" id="exportBtn" style="font-size:13px;">📁 この席替えを控える</button>
+    <button class="go ghost" id="importBtn" style="font-size:13px;">📂 控えから戻す</button>
+    <input type="file" id="importFile" accept="application/json,.json" style="display:none;">
+  </div>
+  <div class="hint" style="text-align:center; margin-top:5px;">入力は自動でこの端末に残ります。「控える」はバックアップ用（年度末・買い替え時の引き継ぎに）。</div>
 
   <div class="footer">
     「こんなツールが欲しい・ここを直して」のリクエストは <a href="https://line.me/R/ti/p/@171pmdrv" target="_blank" rel="noopener">公式LINE</a> へ🌱<br>
@@ -193,7 +209,7 @@ function buildFrontChips(){
   names.forEach(n=>{
     const c=document.createElement("div");
     c.className="chip"+(frontSelected.has(n)?" on":""); c.textContent=n;
-    c.onclick=()=>{ if(frontSelected.has(n))frontSelected.delete(n); else frontSelected.add(n); c.classList.toggle("on"); };
+    c.onclick=()=>{ if(frontSelected.has(n))frontSelected.delete(n); else frontSelected.add(n); c.classList.toggle("on"); persist(); };
     box.appendChild(c);
   });
 }
@@ -211,9 +227,10 @@ function addGroupTo(containerId,labelText,preset){
   const g=document.createElement("div"); g.className="group";
   const lab=document.createElement("span"); lab.className="glabel"; lab.textContent=labelText; g.appendChild(lab);
   for(let i=0;i<4;i++) g.appendChild(makeSelect(preset && preset[i]));
-  const rm=document.createElement("button"); rm.className="rm"; rm.textContent="削除"; rm.onclick=()=>g.remove();
+  const rm=document.createElement("button"); rm.className="rm"; rm.textContent="削除"; rm.onclick=()=>{ g.remove(); persist(); };
   g.appendChild(rm);
   $(containerId).appendChild(g);
+  persist();
 }
 function rebuildGroupOptions(){
   document.querySelectorAll(".gsel").forEach(sel=>{
@@ -240,8 +257,9 @@ function addFixed(presetName,presetCol,presetRow){
   const t2=document.createElement("span"); t2.textContent="列・たて"; wrap.appendChild(t2);
   const rowI=document.createElement("input"); rowI.type="number"; rowI.min=1; rowI.value=presetRow||1; rowI.className="fxrow"; rowI.style.width="52px"; wrap.appendChild(rowI);
   const t3=document.createElement("span"); t3.textContent="行目"; wrap.appendChild(t3);
-  const rm=document.createElement("button"); rm.className="rm"; rm.textContent="削除"; rm.onclick=()=>wrap.remove(); wrap.appendChild(rm);
+  const rm=document.createElement("button"); rm.className="rm"; rm.textContent="削除"; rm.onclick=()=>{ wrap.remove(); persist(); }; wrap.appendChild(rm);
   $("fixedRows").appendChild(wrap);
+  persist();
 }
 function readFixed(cols,rows){
   const list=[], seen=new Set(), errors=[];
@@ -363,7 +381,7 @@ function generate(names,cols,rows,apartGroups,closeGroups,frontSet,apartModes,ne
 }
 
 function render(seats,cols,frontSet,flicker,clashNames,inactive){
-  const grid=$("grid"); grid.style.gridTemplateColumns=`repeat(${cols},1fr)`; grid.innerHTML="";
+  const grid=$("grid"); grid.style.gridTemplateColumns=`repeat(${cols},minmax(54px,1fr))`; grid.innerHTML="";
   seats.forEach((n,i)=>{
     const isOff = inactive && inactive.has(i);
     const d=document.createElement("div");
@@ -422,6 +440,8 @@ function run(){
         parts.push("▶ 何を優先するか「うまく収まらない時、どれを優先？」で選んで、もう一度「席替え！」を押すと、その条件を優先して組み直します。\n（よこの人数を変えて席を広げる／条件を1つ減らす、も有効です）");
         msg.className="warn"; msg.textContent=parts.join("\n\n");
       }
+      lastResult={ seats, cols, inactive:[...inactive], clash:[...clashNames], msgText:$("msg").textContent, msgClass:$("msg").className };
+      persist();
     }
   },90);
 }
@@ -434,20 +454,82 @@ function updateLayoutInfo(){
   const ci=$("countInfo"); if(ci) ci.textContent = N ? `→ いま ${N}人` : "";
   $("layoutInfo").textContent = N ? `→ よこ${cols}人 × たて${rows}行（自動）でならびます` : "↑ まず名前を入れてね";
 }
+/* ---- 自動で残す（この端末のみ・送信なし） ---- */
+const LS_KEY="sekigae_v1";
+let restoring=false, lastResult=null;
+function rawFixed(){
+  return [...document.querySelectorAll("#fixedRows .group")].map(w=>({
+    name:w.querySelector(".fxname").value,
+    col:parseInt(w.querySelector(".fxcol").value)||1,
+    row:parseInt(w.querySelector(".fxrow").value)||1
+  })).filter(f=>f.name);
+}
+function snapshotInputs(){
+  return { v:1,
+    names:$("names").value, cols:parseInt($("cols").value)||6, priority:$("priority").value,
+    apartModes:{lr:$("avLR").checked,fb:$("avFB").checked,diag:$("avDiag").checked},
+    nearModes:{lr:$("nearLR").checked,fb:$("nearFB").checked,diag:$("nearDiag").checked},
+    apart:readGroupsFrom("groups"), close:readGroupsFrom("closeGroups"),
+    fixed:rawFixed(), front:[...frontSelected] };
+}
+function persist(){ if(restoring) return; try{ localStorage.setItem(LS_KEY, JSON.stringify({...snapshotInputs(), result:lastResult})); }catch(e){} }
+function applyState(s){
+  if(!s) return; restoring=true;
+  if(s.names!=null) $("names").value=s.names;
+  if(s.cols) $("cols").value=s.cols;
+  if(s.priority) $("priority").value=s.priority;
+  const am=s.apartModes||{}, nm=s.nearModes||{};
+  $("avLR").checked=am.lr!==false; $("avFB").checked=am.fb!==false; $("avDiag").checked=!!am.diag;
+  $("nearLR").checked=nm.lr!==false; $("nearFB").checked=nm.fb!==false; $("nearDiag").checked=!!nm.diag;
+  $("groups").innerHTML=""; (s.apart||[]).forEach(g=>addGroupTo("groups","この子たちを離す：",g));
+  $("closeGroups").innerHTML=""; (s.close||[]).forEach(g=>addGroupTo("closeGroups","この子たちを近づける：",g));
+  $("fixedRows").innerHTML=""; (s.fixed||[]).forEach(f=>addFixed(f.name,f.col,f.row));
+  frontSelected=new Set(s.front||[]); buildFrontChips();
+  lastResult=s.result||null;
+  updateLayoutInfo(); restoring=false;
+}
+function showResultOrRun(){
+  if(lastResult&&lastResult.seats){
+    render(lastResult.seats, lastResult.cols||(parseInt($("cols").value)||6), frontSelected, false, new Set(lastResult.clash||[]), new Set(lastResult.inactive||[]));
+    if(lastResult.msgText){ $("msg").className=lastResult.msgClass||""; $("msg").textContent=lastResult.msgText; }
+  } else run();
+}
+/* ---- 控え（書き出し／読み込み） ---- */
+function exportBackup(){
+  const data=JSON.stringify({...snapshotInputs(), result:lastResult}, null, 2);
+  const url=URL.createObjectURL(new Blob([data],{type:"application/json"}));
+  const a=document.createElement("a"); a.href=url; a.download="席替えの控え.json"; a.click();
+  setTimeout(()=>URL.revokeObjectURL(url),1000);
+}
+function importBackup(file){
+  const r=new FileReader();
+  r.onload=()=>{ try{ applyState(JSON.parse(r.result)); persist(); showResultOrRun(); alert("控えから戻しました🌱"); }
+    catch(e){ alert("ファイルを読めませんでした。"); } };
+  r.readAsText(file);
+}
+
 $("names").addEventListener("input", ()=>{ buildFrontChips(); rebuildGroupOptions(); updateLayoutInfo(); });
 $("cols").addEventListener("input", updateLayoutInfo);
+document.addEventListener("input", persist);
+document.addEventListener("change", persist);
 $("addGroup").onclick=()=>addGroupTo("groups","この子たちを離す：");
 $("addCloseGroup").onclick=()=>addGroupTo("closeGroups","この子たちを近づける：");
 $("addFixed").onclick=()=>addFixed();
 $("go").onclick=run; $("again").onclick=run;
+$("exportBtn").onclick=exportBackup;
+$("importBtn").onclick=()=>$("importFile").click();
+$("importFile").addEventListener("change", e=>{ if(e.target.files[0]) importBackup(e.target.files[0]); e.target.value=""; });
 
-buildFrontChips();
-addGroupTo("groups","この子たちを離す：",["れん","かいと"]);   // サンプル
-addGroupTo("closeGroups","この子たちを近づける：",["ゆい","そうた"]);
-frontSelected.add("みお"); buildFrontChips();
-updateLayoutInfo();
-render(new Array(30).fill(null),6,new Set(),false,null);
-window.onload=run;
+const saved=(()=>{ try{ return JSON.parse(localStorage.getItem(LS_KEY)); }catch(e){ return null; } })();
+if(saved){ applyState(saved); showResultOrRun(); }
+else {
+  buildFrontChips();
+  addGroupTo("groups","この子たちを離す：",["れん","かいと"]);
+  addGroupTo("closeGroups","この子たちを近づける：",["ゆい","そうた"]);
+  frontSelected.add("みお"); buildFrontChips();
+  updateLayoutInfo(); run();
+}
+if("serviceWorker" in navigator){ window.addEventListener("load",()=>navigator.serviceWorker.register("sw.js").catch(()=>{})); }
 </script>
 </body>
 </html>
