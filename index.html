@@ -75,6 +75,7 @@
 <div class="wrap">
   <h1>🪑 席替えツール</h1>
   <div class="sub">名前を入れて、ボタンを押すだけ。たて（行）は人数に合わせて自動です。</div>
+  <div style="margin:-6px 0 16px; font-size:13px;"><a href="https://x.com/sensei_support" target="_blank" rel="noopener" style="color:#3f6b27; text-decoration:none; font-weight:bold;">𝕏 @sensei_support（つくった人：たんく）</a></div>
 
   <div class="step">
     <div class="steptitle"><span class="stepnum">1</span>クラスの名前を入れる</div>
@@ -131,6 +132,10 @@
       <div id="groups"></div>
       <button class="addbtn" id="addGroup">＋ グループを追加</button>
 
+      <label style="margin-top:16px;">近づけたいグループ <span class="hint">（助け合う子など。となり同士にします。1組まで4人）</span></label>
+      <div id="closeGroups"></div>
+      <button class="addbtn" id="addCloseGroup">＋ グループを追加</button>
+
       <label style="margin-top:16px;">前の方にしたい子 <span class="hint">（クリックで選択／視力・支援など）</span></label>
       <div class="chips" id="frontChips"></div>
     </div>
@@ -177,16 +182,16 @@ function makeSelect(value){
   if(value && names.includes(value)) s.value=value;
   return s;
 }
-function addGroup(preset){
+function addGroupTo(containerId,labelText,preset){
   const g=document.createElement("div"); g.className="group";
-  const lab=document.createElement("span"); lab.className="glabel"; lab.textContent="このグループは離す："; g.appendChild(lab);
+  const lab=document.createElement("span"); lab.className="glabel"; lab.textContent=labelText; g.appendChild(lab);
   for(let i=0;i<4;i++) g.appendChild(makeSelect(preset && preset[i]));
   const rm=document.createElement("button"); rm.className="rm"; rm.textContent="削除"; rm.onclick=()=>g.remove();
   g.appendChild(rm);
-  $("groups").appendChild(g);
+  $(containerId).appendChild(g);
 }
 function rebuildGroupOptions(){
-  document.querySelectorAll("#groups .gsel").forEach(sel=>{
+  document.querySelectorAll(".gsel").forEach(sel=>{
     const cur=sel.value; const names=rosterNames();
     sel.innerHTML="";
     const o0=document.createElement("option"); o0.value=""; o0.textContent="（なし）"; sel.appendChild(o0);
@@ -194,9 +199,9 @@ function rebuildGroupOptions(){
     sel.value = names.includes(cur) ? cur : "";
   });
 }
-function readGroups(){
+function readGroupsFrom(containerId){
   const groups=[];
-  document.querySelectorAll("#groups .group").forEach(g=>{
+  document.querySelectorAll("#"+containerId+" .group").forEach(g=>{
     const members=[...new Set([...g.querySelectorAll(".gsel")].map(s=>s.value).filter(Boolean))];
     if(members.length>=2) groups.push(members);
   });
@@ -224,38 +229,76 @@ function buildInactive(total,cols,rows,empties){
   }
   return inactive;
 }
-function generate(names,cols,rows,groups,frontSet,modes){
-  const total=cols*rows;
-  const empties=total-names.length;
-  const inactive=buildInactive(total,cols,rows,empties);
-  const activeSeats=[]; for(let i=0;i<total;i++) if(!inactive.has(i)) activeSeats.push(i);
-  const frontList=names.filter(n=>frontSet.has(n));
-  const others=names.filter(n=>!frontSet.has(n));
-  const neededFrontRows=Math.max(1,Math.ceil(frontList.length/cols));
-  const frontSeats=activeSeats.filter(i=>Math.floor(i/cols)<neededFrontRows);
-
-  let best=null,bestV=Infinity;
-  for(let attempt=0;attempt<1500;attempt++){
-    const seats=new Array(total).fill(null);
-    const fS=shuffle(frontSeats);
-    frontList.forEach((n,k)=>{ if(k<fS.length) seats[fS[k]]=n; });
-    const empty=activeSeats.filter(i=>seats[i]===null);
-    const o=shuffle(others);
-    shuffle(empty).slice(0,o.length).forEach((idx,k)=>seats[idx]=o[k]);
-    const pos={}; seats.forEach((n,i)=>{ if(n) pos[n]=i; });
-    let v=0;
-    groups.forEach(g=>{ for(let i=0;i<g.length;i++)for(let j=i+1;j<g.length;j++){
-      const a=g[i],b=g[j]; if(pos[a]!=null&&pos[b]!=null&&isClose(pos[a],pos[b],cols,modes)) v++; }});
-    if(v<bestV){bestV=v;best=seats;}
-    if(v===0)break;
+function neighbors(i,cols,rows){
+  const r=Math.floor(i/cols),c=i%cols,out=[];
+  if(c>0)out.push(i-1); if(c<cols-1)out.push(i+1);
+  if(r>0)out.push(i-cols); if(r<rows-1)out.push(i+cols);
+  return out;
+}
+function orthoAdj(i,j,cols){ const dr=Math.abs(Math.floor(i/cols)-Math.floor(j/cols)),dc=Math.abs(i%cols-j%cols); return (dr===0&&dc===1)||(dc===0&&dr===1); }
+// 近づけたいグループ：となり合う席のかたまりを探して置く
+function placeCluster(seats,activeSet,size,cols,rows){
+  for(let t=0;t<60;t++){
+    const free=[...activeSet].filter(i=>seats[i]===null);
+    if(free.length<size) return null;
+    const seed=free[Math.floor(Math.random()*free.length)];
+    const cluster=[seed],used=new Set([seed]);
+    while(cluster.length<size){
+      const frontier=[];
+      cluster.forEach(s=>neighbors(s,cols,rows).forEach(nb=>{ if(activeSet.has(nb)&&seats[nb]===null&&!used.has(nb)) frontier.push(nb); }));
+      if(!frontier.length) break;
+      const pick=frontier[Math.floor(Math.random()*frontier.length)];
+      cluster.push(pick); used.add(pick);
+    }
+    if(cluster.length===size) return cluster;
   }
-  const pos={}; best.forEach((n,i)=>{ if(n) pos[n]=i; });
+  return null;
+}
+function generate(names,cols,rows,apartGroups,closeGroups,frontSet,modes){
+  const total=cols*rows;
+  const inactive=buildInactive(total,cols,rows,total-names.length);
+  const activeSeats=[]; for(let i=0;i<total;i++) if(!inactive.has(i)) activeSeats.push(i);
+  const activeSet=new Set(activeSeats);
+  const frontList=names.filter(n=>frontSet.has(n));
+  const neededFrontRows=Math.max(1,Math.ceil(frontList.length/cols));
+
+  function evalc(seats){
+    const pos={}; seats.forEach((n,i)=>{ if(n) pos[n]=i; });
+    let apartV=0;
+    apartGroups.forEach(g=>{ for(let i=0;i<g.length;i++)for(let j=i+1;j<g.length;j++){ const a=g[i],b=g[j]; if(pos[a]!=null&&pos[b]!=null&&isClose(pos[a],pos[b],cols,modes)) apartV++; }});
+    let closeV=0;
+    closeGroups.forEach(g=>g.forEach(a=>{ if(pos[a]==null) return; if(!g.some(b=>b!==a&&pos[b]!=null&&orthoAdj(pos[a],pos[b],cols))) closeV++; }));
+    return {pos,apartV,closeV};
+  }
+
+  let best=null,bestScore=Infinity;
+  for(let attempt=0;attempt<700;attempt++){
+    const seats=new Array(total).fill(null);
+    [...closeGroups].sort((a,b)=>b.length-a.length).forEach(g=>{ // 近づけグループをかたまりで配置
+      const cl=placeCluster(seats,activeSet,g.length,cols,rows);
+      if(cl) g.forEach((n,k)=>seats[cl[k]]=n);
+    });
+    const placed1=new Set(seats.filter(Boolean)); // 前列希望（未配置のみ）を前へ
+    const frontRem=frontList.filter(n=>!placed1.has(n));
+    const frontFree=activeSeats.filter(i=>seats[i]===null && Math.floor(i/cols)<neededFrontRows);
+    shuffle(frontFree).slice(0,frontRem.length).forEach((idx,k)=>seats[idx]=frontRem[k]);
+    const placed2=new Set(seats.filter(Boolean)); // 残り全員
+    const rest=names.filter(n=>!placed2.has(n));
+    const freeRest=activeSeats.filter(i=>seats[i]===null);
+    shuffle(freeRest).slice(0,rest.length).forEach((idx,k)=>seats[idx]=rest[k]);
+    const {apartV,closeV}=evalc(seats);
+    const score=apartV*2+closeV;
+    if(score<bestScore){ bestScore=score; best=seats; }
+    if(score===0) break;
+  }
+  const {pos}=evalc(best);
   const violPairs=[];
-  groups.forEach(g=>{ for(let i=0;i<g.length;i++)for(let j=i+1;j<g.length;j++){
-    const a=g[i],b=g[j]; if(pos[a]!=null&&pos[b]!=null&&isClose(pos[a],pos[b],cols,modes)) violPairs.push([a,b]); }});
-  const frontSpill=frontList.filter(n=>Math.floor(pos[n]/cols)!==0);
+  apartGroups.forEach(g=>{ for(let i=0;i<g.length;i++)for(let j=i+1;j<g.length;j++){ const a=g[i],b=g[j]; if(pos[a]!=null&&pos[b]!=null&&isClose(pos[a],pos[b],cols,modes)) violPairs.push([a,b]); }});
+  const farGroups=[];
+  closeGroups.forEach(g=>{ const bad=g.some(a=>pos[a]!=null && !g.some(b=>b!==a&&pos[b]!=null&&orthoAdj(pos[a],pos[b],cols))); if(bad) farGroups.push(g); });
+  const frontSpill=frontList.filter(n=>pos[n]!=null && Math.floor(pos[n]/cols)!==0);
   const clashNames=new Set(violPairs.flat());
-  return {seats:best, violPairs, frontSpill, clashNames, inactive};
+  return {seats:best, violPairs, farGroups, frontSpill, clashNames, inactive};
 }
 
 function render(seats,cols,frontSet,flicker,clashNames,inactive){
@@ -273,7 +316,8 @@ function render(seats,cols,frontSet,flicker,clashNames,inactive){
 function run(){
   const names=rosterNames();
   const cols=Math.max(1,parseInt($("cols").value)||1);
-  const groups=readGroups();
+  const apartGroups=readGroupsFrom("groups");
+  const closeGroups=readGroupsFrom("closeGroups");
   const msg=$("msg");
 
   if(names.length===0){ msg.className="warn"; msg.textContent="名簿に名前を入れてね。"; return; }
@@ -282,7 +326,7 @@ function run(){
   const total=cols*rows;
 
   const modes={ lr:$("avLR").checked, fb:$("avFB").checked, diag:$("avDiag").checked };
-  const {seats,violPairs,frontSpill,clashNames,inactive}=generate(names,cols,rows,groups,frontSelected,modes);
+  const {seats,violPairs,farGroups,frontSpill,clashNames,inactive}=generate(names,cols,rows,apartGroups,closeGroups,frontSelected,modes);
 
   $("go").disabled=true; $("again").disabled=true; msg.className=""; msg.textContent="シャッフル中…";
   let ticks=0; const pool=names.slice();
@@ -295,12 +339,15 @@ function run(){
       clearInterval(timer);
       render(seats,cols,frontSelected,false,clashNames,inactive);
       $("go").disabled=false; $("again").disabled=false;
-      if(violPairs.length===0 && frontSpill.length===0){
+      if(violPairs.length===0 && farGroups.length===0 && frontSpill.length===0){
         msg.className="ok"; msg.textContent="席替え完了！ 条件もぜんぶクリア🌱";
       } else {
         const parts=["席替えはできました。ただ、ぜんぶの条件は満たしきれませんでした👇"];
         if(violPairs.length){
-          parts.push("◆ となりを離しきれなかったペア（赤ワク）：\n"+violPairs.map(p=>`　・${p[0]} と ${p[1]}`).join("\n"));
+          parts.push("◆ 離しきれなかったペア（赤ワク）：\n"+violPairs.map(p=>`　・${p[0]} と ${p[1]}`).join("\n"));
+        }
+        if(farGroups.length){
+          parts.push("◆ 近づけきれなかったグループ：\n"+farGroups.map(g=>`　・${g.join("・")}`).join("\n"));
         }
         if(frontSpill.length){
           parts.push("◆ 前列きぼうが多くて、2列目になった子：\n"+frontSpill.map(n=>`　・${n}`).join("\n"));
@@ -322,11 +369,13 @@ function updateLayoutInfo(){
 }
 $("names").addEventListener("input", ()=>{ buildFrontChips(); rebuildGroupOptions(); updateLayoutInfo(); });
 $("cols").addEventListener("input", updateLayoutInfo);
-$("addGroup").onclick=()=>addGroup();
+$("addGroup").onclick=()=>addGroupTo("groups","この子たちを離す：");
+$("addCloseGroup").onclick=()=>addGroupTo("closeGroups","この子たちを近づける：");
 $("go").onclick=run; $("again").onclick=run;
 
 buildFrontChips();
-addGroup(["れん","かいと"]);   // サンプル
+addGroupTo("groups","この子たちを離す：",["れん","かいと"]);   // サンプル
+addGroupTo("closeGroups","この子たちを近づける：",["ゆい","そうた"]);
 frontSelected.add("みお"); buildFrontChips();
 updateLayoutInfo();
 render(new Array(30).fill(null),6,new Set(),false,null);
