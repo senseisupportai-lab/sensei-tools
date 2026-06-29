@@ -1,0 +1,420 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="manifest" href="touban.webmanifest">
+<meta name="theme-color" content="#7fb35a">
+<link rel="apple-touch-icon" href="icon-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="係・当番ぎめ">
+<title>係・当番ぎめ</title>
+<style>
+  * { box-sizing: border-box; }
+  body { font-family:"Hiragino Sans","Hiragino Kaku Gothic ProN","Yu Gothic","Noto Sans JP",sans-serif;
+    margin:0; background:linear-gradient(#f7faf3,#eef4e8); color:#2f3b2a; line-height:1.6; }
+  .wrap { max-width:1000px; margin:0 auto; padding:20px 16px 60px; }
+  h1 { font-size:24px; color:#3f6b27; margin:6px 0 2px; }
+  .sub { color:#6c8a52; font-size:13px; margin-bottom:18px; }
+  .hint { color:#8a9a7c; font-size:11px; font-weight:normal; }
+  label { display:block; font-weight:bold; color:#3f6b27; font-size:13px; margin-bottom:5px; }
+  textarea { width:100%; border:1.5px solid #cfe0bb; border-radius:8px; padding:8px 10px; font-size:13px;
+             font-family:inherit; resize:vertical; }
+  input[type=text]{ border:1.5px solid #cfe0bb; border-radius:8px; padding:7px 9px; font-size:14px; font-family:inherit; }
+  input[type=number]{ width:58px; padding:6px 8px; border:1.5px solid #cfe0bb; border-radius:8px; font-size:15px; text-align:center; }
+
+  /* ステップUI（席替えツールと統一） */
+  .step{ background:#fff; border:1.5px solid #dde7d0; border-radius:14px; padding:14px 18px; margin-bottom:14px; box-shadow:0 3px 10px rgba(90,138,60,.06); }
+  .steptitle{ font-size:17px; font-weight:bold; color:#3f6b27; display:flex; align-items:center; margin-bottom:10px; }
+  .stepnum{ display:inline-flex; width:28px; height:28px; background:#7fb35a; color:#fff; border-radius:50%;
+            align-items:center; justify-content:center; font-weight:bold; margin-right:10px; flex:0 0 auto; }
+
+  /* 係の行 */
+  .jobrow{ display:flex; gap:7px; align-items:center; background:#fbfdf8; border:1px solid #e6edda; border-radius:10px;
+           padding:7px 9px; margin-bottom:7px; flex-wrap:wrap; }
+  .jobrow .emo{ width:44px; text-align:center; font-size:18px; padding:6px 4px; }
+  .jobrow .jname{ flex:1; min-width:130px; }
+  .jobrow .times{ color:#7a8a6b; font-size:13px; font-weight:bold; }
+  .jobrow .ppl{ color:#7a8a6b; font-size:13px; }
+  .rm { background:#fff; border:1.5px solid #e0b4b4; color:#c0392b; border-radius:8px; padding:5px 10px; font-size:12px; cursor:pointer; }
+  .addbtn{ background:#fff; border:1.5px dashed #9cc473; color:#5a8a3c; border-radius:8px; padding:7px 14px; font-size:13px; cursor:pointer; margin-top:2px; }
+  .presets{ display:flex; flex-wrap:wrap; gap:6px; margin:10px 0 2px; }
+  .preset{ background:#eef6e4; border:1.5px solid #cfe3b8; color:#3f6b27; border-radius:20px; padding:5px 11px;
+           font-size:12.5px; cursor:pointer; user-select:none; }
+  .preset:hover{ background:#e0efce; }
+
+  .ckbox{ display:inline-flex; align-items:center; gap:6px; margin:0 16px 6px 0; font-weight:normal; color:#2f3b2a; font-size:14px; cursor:pointer; }
+  .ckbox input{ width:16px; height:16px; }
+
+  .go { display:inline-flex; align-items:center; gap:8px; background:#7fb35a; color:#fff; border:none;
+        border-radius:30px; padding:12px 28px; font-size:17px; font-weight:bold; cursor:pointer; margin:4px 4px 0;
+        box-shadow:0 3px 0 #5a8a3c; transition:transform .05s; }
+  .go:active { transform:translateY(2px); box-shadow:0 1px 0 #5a8a3c; }
+  .go:disabled { background:#bcd0a6; box-shadow:0 3px 0 #a5bd8f; cursor:default; }
+  .ghost { background:#fff; color:#5a8a3c; border:1.5px solid #9cc473; box-shadow:none; padding:9px 18px; font-size:14px; }
+
+  #msg { font-size:13px; margin:12px 0 0; min-height:10px; white-space:pre-line; }
+  #msg.warn { color:#b9622a; background:#fff6ec; border:1px solid #f0d6b8; border-radius:10px; padding:10px 12px; }
+  #msg.ok { color:#3f6b27; font-weight:bold; }
+
+  /* 掲示ボード */
+  .boardwrap{ margin-top:14px; }
+  .boardhead{ text-align:center; background:#33402c; color:#f3f7ec; border-radius:10px; padding:10px;
+              font-weight:bold; letter-spacing:3px; font-size:17px; margin-bottom:14px; }
+  .board{ display:grid; grid-template-columns:repeat(auto-fill,minmax(220px,1fr)); gap:12px; }
+  .jobcard{ background:#fff; border:1.5px solid #d7e8c5; border-radius:14px; padding:12px 14px;
+            box-shadow:0 2px 6px rgba(90,138,60,.10); }
+  .jhead{ display:flex; align-items:center; gap:8px; border-bottom:2px dashed #e0ebd2; padding-bottom:7px; margin-bottom:9px; }
+  .jhead .jemoji{ font-size:24px; line-height:1; }
+  .jhead .jtitle{ font-size:16px; font-weight:bold; color:#33402c; }
+  .jhead .jn{ margin-left:auto; font-size:11px; color:#9bae86; font-weight:bold; }
+  .jmembers{ display:flex; flex-wrap:wrap; gap:6px; }
+  .mchip{ background:#eef6e4; border:1px solid #cfe3b8; color:#33402c; border-radius:20px; padding:4px 12px; font-size:14px; font-weight:bold; }
+  .mchip.empty{ background:#f3f3ee; border-style:dashed; color:#b9c4ac; font-weight:normal; }
+  .jobcard.flick .mchip{ opacity:.5; }
+
+  .footer{ text-align:center; margin-top:34px; padding:16px; border-top:1px solid #e0e8d4; font-size:13px; color:#6c8a52; line-height:2; }
+  .footer a{ color:#3f6b27; font-weight:bold; text-decoration:none; }
+  .tagline{ font-size:13.5px; color:#5a8a3c; margin:2px 0 10px; }
+  .safe{ background:#eef6e4; border:1px solid #cfe3b8; border-radius:9px; padding:8px 11px; margin-top:8px;
+         font-size:12.5px; color:#3f6b27; line-height:1.7; }
+  .about{ max-width:540px; margin:0 auto 14px; text-align:left; background:#fbfdf8; border:1px solid #e6edda;
+          border-radius:10px; padding:11px 14px; font-size:12.5px; color:#5b6b50; line-height:1.95; }
+  .about b{ color:#3f6b27; }
+  .hero{ text-align:center; margin:4px 0 20px; }
+  .hero h1{ margin:6px 0 2px; }
+  .hero .tagline, .hero .sub{ margin-left:auto; margin-right:auto; }
+  .xtop{ margin:5px 0 0; font-size:13px; }
+  .xtop a{ color:#3f6b27; text-decoration:none; font-weight:bold; }
+  .counter{ display:inline-block; margin:10px auto 0; font-size:13px; color:#3f6b27; background:#eef6e4;
+            border:1px solid #cfe3b8; border-radius:20px; padding:5px 14px; }
+  @media (max-width:600px){
+    .wrap{ padding:14px 10px 50px; }
+    .step{ padding:12px 13px; }
+    .board{ grid-template-columns:repeat(auto-fill,minmax(150px,1fr)); }
+  }
+  /* 印刷／掲示：入力UIを隠し、ボードだけ大きく１枚に */
+  @media print{
+    body{ background:#fff; }
+    .noprint{ display:none !important; }
+    .wrap{ max-width:none; padding:0; }
+    .boardhead{ background:#fff; color:#000; border:2px solid #000; letter-spacing:4px; }
+    .board{ grid-template-columns:repeat(2,1fr); gap:10px; }
+    .jobcard{ box-shadow:none; border:1.5px solid #888; break-inside:avoid; }
+    .mchip{ background:#fff; border:1px solid #888; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <a class="noprint" href="https://senseisupportai-lab.github.io/sensei-tools/" style="display:inline-block;margin:0 0 8px;color:#5a8a3c;font-size:13px;font-weight:bold;text-decoration:none;">← 勝手ツール一覧</a>
+  <div class="hero noprint">
+    <h1>🙋 係・当番ぎめ</h1>
+    <div class="tagline">名簿と係を入れてボタンを押すだけ。なるべく公平に・全員にいきわたるように決めます。</div>
+    <div class="sub">そのまま黒板に映したり、印刷して掲示できます。もう一度押すと“前回と違う担当”でローテーション。</div>
+    <div class="xtop"><a href="https://x.com/sensei_support" target="_blank" rel="noopener">𝕏 @sensei_support（つくった人：たんく）</a></div>
+    <div id="counter" class="counter" style="display:none;"></div>
+  </div>
+
+  <div class="step noprint">
+    <div class="steptitle"><span class="stepnum">1</span>クラスの名前を入れる</div>
+    <textarea id="names" rows="6">あおい
+はると
+ゆい
+そうた
+めい
+りく
+さくら
+かなで
+ゆうき
+ひなた
+こはく
+つむぎ
+れん
+あかり
+だいち
+みお
+そら
+いつき
+ののか
+ひかる
+あさひ
+まなと
+ことね
+ゆずき</textarea>
+    <div id="countInfo" style="margin-top:6px; font-size:14px; color:#3f6b27; font-weight:bold;"></div>
+    <div class="hint" style="margin-top:2px;">※はじめはサンプルが入っています。自分のクラスに置きかえてね。</div>
+    <div class="safe">🔒 入力した名前や情報は、この端末の中だけに保存されます。私たちのサーバーには送信されません。</div>
+  </div>
+
+  <div class="step noprint">
+    <div class="steptitle"><span class="stepnum">2</span>係・当番をならべる</div>
+    <div class="hint" style="margin-bottom:6px;">それぞれ「何人」にするか決められます。よく使うものは下のボタンから足せます。</div>
+    <div id="jobs"></div>
+    <button class="addbtn" id="addJob">＋ 係・当番を足す</button>
+    <div class="presets" id="presets"></div>
+  </div>
+
+  <div class="step noprint">
+    <div class="steptitle"><span class="stepnum">3</span>きめる！</div>
+    <div style="margin-bottom:6px;">
+      <label class="ckbox"><input type="checkbox" id="optRotate" checked> 前回と違う担当にする（ローテーション）</label>
+      <label class="ckbox"><input type="checkbox" id="optNoDouble"> 1人につき1つまで（かけ持ちなし）</label>
+    </div>
+    <button class="go" id="go">🎯 きめる！</button>
+    <button class="go ghost" id="again">もう一回</button>
+    <div id="msg"></div>
+  </div>
+
+  <div class="boardwrap" id="boardwrap" style="display:none;">
+    <div class="boardhead" id="boardhead">係・当番ひょう</div>
+    <div class="board" id="board"></div>
+  </div>
+
+  <div class="noprint" style="text-align:center; margin-top:18px;">
+    <button class="go ghost" id="printBtn" style="font-size:13px;">🖨 印刷／黒板に映す</button>
+    <button class="go ghost" id="exportBtn" style="font-size:13px;">📁 控える</button>
+    <button class="go ghost" id="importBtn" style="font-size:13px;">📂 控えから戻す</button>
+    <input type="file" id="importFile" accept="application/json,.json" style="display:none;">
+  </div>
+  <div class="hint noprint" style="text-align:center; margin-top:5px;">入力は自動でこの端末に残ります。「控える」はバックアップ用（年度末・買い替え時の引き継ぎに）。</div>
+
+  <div class="noprint" style="text-align:center; margin-top:20px;">
+    <div class="hint">📲 スマホは「共有 → ホーム画面に追加」で、次からアイコンからすぐ開けます。</div>
+  </div>
+
+  <div class="footer noprint">
+    <div class="about">
+      <b>このツールについて</b><br>
+      「係決め、また揉めた…」「だれが何回やったか覚えてられない」をなくしたくて作りました。公平に・全員にいきわたるよう自動で決め、そのまま掲示できます。<br>
+      作っているのは、学び続ける先生を応援したい「たんく」です。
+    </div>
+    「こんなのが欲しい・ここを直して」は <a href="https://x.com/sensei_support" target="_blank" rel="noopener">𝕏 @sensei_support</a> へ🌱
+  </div>
+</div>
+
+<script>
+const $ = id => document.getElementById(id);
+const rosterNames = () => $("names").value.split("\n").map(s=>s.trim()).filter(Boolean);
+const shuffle = a => { a=a.slice(); for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];} return a; };
+
+/* よく使う係・当番（足すボタン） */
+const PRESETS=[
+  ["📚","図書係",2],["🧹","黒板係",2],["📄","くばり係",2],["💡","電気係",1],
+  ["🪟","まど・かんき係",2],["🐹","生きもの係",2],["🌷","花・植物係",2],["🩹","保健係",1],
+  ["🎵","音楽係",2],["🏃","体育・整列係",2],["🎉","レク・あそび係",2],["📢","号令係",1],
+  ["🍱","給食当番",4],["🧽","そうじ当番",4],["☀️","日直",2],["🗓","こよみ係",1],
+];
+
+let restoring=false, lastResult=null, userDecided=false;
+let prevAssignment={};   // 前回の {名前:[係名,...]}（ローテーション用）
+
+/* ---- 係の行 ---- */
+function addJob(emoji,name,count){
+  const row=document.createElement("div"); row.className="jobrow";
+  const e=document.createElement("input"); e.type="text"; e.className="emo"; e.maxLength=2; e.value=emoji||"🌱";
+  const n=document.createElement("input"); n.type="text"; n.className="jname"; n.value=name||""; n.placeholder="係・当番の名前";
+  const t=document.createElement("span"); t.className="times"; t.textContent="×";
+  const c=document.createElement("input"); c.type="number"; c.min=1; c.max=40; c.value=count||1;
+  const p=document.createElement("span"); p.className="ppl"; p.textContent="人";
+  const rm=document.createElement("button"); rm.className="rm"; rm.textContent="削除"; rm.onclick=()=>{ row.remove(); persist(); updateCount(); };
+  row.append(e,n,t,c,p,rm);
+  $("jobs").appendChild(row);
+  persist(); updateCount();
+}
+function readJobs(){
+  return [...document.querySelectorAll("#jobs .jobrow")].map(r=>({
+    emoji:r.querySelector(".emo").value.trim(),
+    name:r.querySelector(".jname").value.trim(),
+    count:Math.max(1,parseInt(r.querySelector('input[type=number]').value)||1)
+  })).filter(j=>j.name);
+}
+
+/* ---- わりあてロジック：負荷が低い人から選ぶ＝自然に全員1つ→均等 ---- */
+function generate(names, jobs, opts, prev){
+  const load={}; names.forEach(n=>load[n]=0);
+  const res=jobs.map(j=>({emoji:j.emoji,name:j.name,count:j.count,members:[]}));
+  const warnings=[];
+  res.forEach(job=>{
+    for(let s=0;s<job.count;s++){
+      let cand=names.filter(n=>!job.members.includes(n));
+      if(opts.noDouble) cand=cand.filter(n=>load[n]===0);
+      if(!cand.length){
+        const lack=job.count-job.members.length;
+        warnings.push(`${job.emoji}${job.name}：人がたりず ${lack}人ぶん空けました`);
+        break;
+      }
+      cand.sort((a,b)=>{
+        if(load[a]!==load[b]) return load[a]-load[b];               // 担当が少ない人を優先
+        const pa=(opts.rotate && prev[a] && prev[a].includes(job.name))?1:0;  // 前回と同じ係は後回し
+        const pb=(opts.rotate && prev[b] && prev[b].includes(job.name))?1:0;
+        if(pa!==pb) return pa-pb;
+        return Math.random()-0.5;
+      });
+      const pick=cand[0];
+      job.members.push(pick); load[pick]++;
+    }
+  });
+  const none=names.filter(n=>load[n]===0);
+  return {res, load, none, warnings};
+}
+
+/* ---- 掲示ボード描画 ---- */
+function renderBoard(result, flicker){
+  const board=$("board"); board.innerHTML="";
+  result.res.forEach(job=>{
+    const card=document.createElement("div"); card.className="jobcard"+(flicker?" flick":"");
+    const head=document.createElement("div"); head.className="jhead";
+    const em=document.createElement("span"); em.className="jemoji"; em.textContent=job.emoji||"🌱";
+    const ti=document.createElement("span"); ti.className="jtitle"; ti.textContent=job.name;
+    const jn=document.createElement("span"); jn.className="jn"; jn.textContent=job.count+"人";
+    head.append(em,ti,jn);
+    const mem=document.createElement("div"); mem.className="jmembers";
+    for(let i=0;i<job.count;i++){
+      const ch=document.createElement("span");
+      if(job.members[i]){ ch.className="mchip"; ch.textContent=job.members[i]; }
+      else { ch.className="mchip empty"; ch.textContent="ぼしゅう"; }
+      mem.appendChild(ch);
+    }
+    card.append(head,mem); board.appendChild(card);
+  });
+  $("boardwrap").style.display="block";
+}
+/* シャッフル中の見せかけ（人をランダムに入れ替えるだけ） */
+function fakeResult(jobs,names){
+  return { res: jobs.map(j=>{
+    const pool=shuffle(names).slice(0,j.count);
+    return {emoji:j.emoji,name:j.name,count:j.count,members:pool};
+  })};
+}
+
+function run(){
+  const names=rosterNames();
+  const jobs=readJobs();
+  const msg=$("msg");
+  if(names.length===0){ msg.className="warn"; msg.textContent="名簿に名前を入れてね。"; return; }
+  if(jobs.length===0){ msg.className="warn"; msg.textContent="係・当番を1つ以上ならべてね。"; return; }
+
+  const opts={ rotate:$("optRotate").checked, noDouble:$("optNoDouble").checked };
+  const result=generate(names, jobs, opts, prevAssignment);
+
+  $("go").disabled=true; $("again").disabled=true; msg.className=""; msg.textContent="きめています…";
+  let ticks=0;
+  const timer=setInterval(()=>{
+    renderBoard(fakeResult(jobs,names), true);
+    if(++ticks>=10){
+      clearInterval(timer);
+      renderBoard(result,false);
+      $("go").disabled=false; $("again").disabled=false;
+      // メッセージ
+      const slots=jobs.reduce((s,j)=>s+j.count,0);
+      const parts=[];
+      if(result.warnings.length===0 && result.none.length===0){
+        msg.className="ok"; msg.textContent=`きまりました！ ${names.length}人 → ${jobs.length}種類・${slots}人ぶんを公平にわりふりました🌱`;
+      } else {
+        parts.push("きまりました。ただ、いくつか気をつけてね👇");
+        if(result.warnings.length) parts.push("◆ 人がたりなかった：\n"+result.warnings.map(w=>"　・"+w).join("\n"));
+        if(result.none.length) parts.push("◆ 係がなかった子（席より人が多い時）：\n　・"+result.none.join("・")+"\n▶ 係を足すか、人数をふやすと全員にいきわたります。");
+        msg.className="warn"; msg.textContent=parts.join("\n\n");
+      }
+      // ローテーション用に「今回の担当」を次回の prev として記録
+      const assign={};
+      result.res.forEach(j=>j.members.forEach(n=>{ (assign[n]=assign[n]||[]).push(j.name); }));
+      prevAssignment=assign;
+      lastResult={ res:result.res };
+      persist();
+    }
+  },80);
+}
+
+/* ---- 自動で残す（この端末のみ・送信なし） ---- */
+const LS_KEY="touban_v1";
+function snapshotInputs(){
+  return { v:1, names:$("names").value, jobs:readJobs(),
+    rotate:$("optRotate").checked, noDouble:$("optNoDouble").checked };
+}
+function persist(){ if(restoring) return; try{
+  localStorage.setItem(LS_KEY, JSON.stringify({...snapshotInputs(), result:lastResult, prev:prevAssignment}));
+}catch(e){} }
+function applyState(s){
+  if(!s) return; restoring=true;
+  if(s.names!=null) $("names").value=s.names;
+  if(typeof s.rotate==="boolean") $("optRotate").checked=s.rotate;
+  if(typeof s.noDouble==="boolean") $("optNoDouble").checked=s.noDouble;
+  $("jobs").innerHTML=""; (s.jobs&&s.jobs.length?s.jobs:[]).forEach(j=>addJob(j.emoji,j.name,j.count));
+  prevAssignment=s.prev||{};
+  lastResult=s.result||null;
+  restoring=false; updateCount();
+}
+function updateCount(){
+  const N=rosterNames().length;
+  const slots=readJobs().reduce((s,j)=>s+j.count,0);
+  $("countInfo").textContent = N ? `→ いま ${N}人　／　係・当番ぜんぶで ${slots}人ぶん` : "";
+}
+
+/* ---- 控え（書き出し／読み込み） ---- */
+function exportBackup(){
+  const data=JSON.stringify({...snapshotInputs(), result:lastResult, prev:prevAssignment}, null, 2);
+  const url=URL.createObjectURL(new Blob([data],{type:"application/json"}));
+  const a=document.createElement("a"); a.href=url; a.download="係・当番の控え.json"; a.click();
+  setTimeout(()=>URL.revokeObjectURL(url),1000);
+}
+function importBackup(file){
+  const r=new FileReader();
+  r.onload=()=>{ try{ applyState(JSON.parse(r.result)); persist();
+    if(lastResult&&lastResult.res) renderBoard({res:lastResult.res},false);
+    alert("控えから戻しました🌱"); }
+    catch(e){ alert("ファイルを読めませんでした。"); } };
+  r.readAsText(file);
+}
+
+/* ---- イベント ---- */
+$("names").addEventListener("input", ()=>{ updateCount(); });
+document.addEventListener("input", persist);
+document.addEventListener("change", persist);
+$("addJob").onclick=()=>addJob("🌱","",1);
+$("go").onclick=()=>{ userDecided=true; run(); };
+$("again").onclick=()=>{ userDecided=true; run(); };
+$("printBtn").onclick=()=>{ if(!lastResult||!lastResult.res){ alert("先に「きめる！」を押してね。"); return; } window.print(); };
+$("exportBtn").onclick=exportBackup;
+$("importBtn").onclick=()=>$("importFile").click();
+$("importFile").addEventListener("change", e=>{ if(e.target.files[0]) importBackup(e.target.files[0]); e.target.value=""; });
+
+/* プリセット・ボタン生成 */
+PRESETS.forEach(([e,n,c])=>{
+  const b=document.createElement("button"); b.className="preset"; b.textContent=e+" "+n;
+  b.onclick=()=>addJob(e,n,c);
+  $("presets").appendChild(b);
+});
+
+/* ---- 起動 ---- */
+const saved=(()=>{ try{ return JSON.parse(localStorage.getItem(LS_KEY)); }catch(e){ return null; } })();
+if(saved){
+  applyState(saved);
+  if(lastResult&&lastResult.res) renderBoard({res:lastResult.res},false);
+} else {
+  [["📚","図書係",2],["🧹","黒板係",2],["📄","くばり係",2],["💡","電気係",1],
+   ["🪟","まど・かんき係",2],["🐹","生きもの係",2],["🎉","レク・あそび係",2],["📢","号令係",1]
+  ].forEach(([e,n,c])=>addJob(e,n,c));
+  updateCount(); run();
+}
+
+/* 来訪カウンター：送るのは「アクセスがあった」事実のみ（入力データは一切送らない） */
+(function(){
+  const NS="senseisupportai-lab", KEY="touban";
+  const counted = localStorage.getItem("touban_counted")==="1";
+  fetch("https://abacus.jasoncameron.dev/"+(counted?"get":"hit")+"/"+NS+"/"+KEY)
+    .then(r=>r.json()).then(d=>{
+      if(typeof d.value==="number"){
+        const el=$("counter");
+        el.textContent="🌱 これまでに "+d.value.toLocaleString("ja-JP")+" 人の先生が使いました";
+        el.style.display="inline-block";
+        localStorage.setItem("touban_counted","1");
+      }
+    }).catch(()=>{});
+})();
+/* Service Worker：表示の高速化＆保険として静かに登録するだけ */
+if("serviceWorker" in navigator){ window.addEventListener("load",()=>navigator.serviceWorker.register("sw.js").catch(()=>{})); }
+</script>
+</body>
+</html>
