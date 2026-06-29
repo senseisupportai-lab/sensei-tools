@@ -56,6 +56,9 @@
   .brand .dot{ color:var(--yellow); }
   .copy{ text-align:center; color:var(--chalk); font-size:clamp(15px,3.4vw,19px); font-weight:700; margin-top:2px; }
   .lead{ text-align:center; color:var(--chalk-dim); font-size:13.5px; margin:8px auto 4px; max-width:560px; }
+  /* 日本語の不自然な改行を抑える（文節で折り返す） */
+  .nb{ white-space:nowrap; }
+  .lead, .card p, .st-p{ word-break:auto-phrase; line-break:strict; }
   .xtop{ text-align:center; font-size:13px; margin-top:8px; }
   .xtop a{ color:var(--yellow); text-decoration:none; font-weight:bold; }
 
@@ -119,7 +122,7 @@
       <span class="brand">ニッチョク<span class="dot">。</span></span>
     </div>
     <div class="copy">先生の、今日の係。</div>
-    <div class="lead">教室の「これ、自動でできたらいいのに」を、ひとつずつ。登録もインストールもいりません。</div>
+    <div class="lead"><span class="nb">教室の</span><span class="nb">「これ、自動でできたらいいのに」を、</span><span class="nb">ひとつずつ。</span><span class="nb">登録も</span><span class="nb">インストールも</span><span class="nb">いりません。</span></div>
     <div class="xtop"><a href="https://x.com/sensei_support" target="_blank" rel="noopener">𝕏 @sensei_support（つくった人：たんく）</a></div>
 
     <div class="rule"></div>
@@ -128,25 +131,25 @@
     <div class="tools">
       <a class="card" href="sekigae.html">
         <div class="top"><span class="emoji">🪑</span><h2>席替えツール</h2></div>
-        <p>名前を入れてボタンを押すだけ。離したい子・前にしたい子などの配慮もまるごとおまかせ。子どもの情報は端末の外に出ません。</p>
+        <p>名前を入れてボタンを押すだけ。離したい子・前にしたい子などの配慮もまるごとおまかせ。子どもの情報は<span class="nb">端末の外に出ません。</span></p>
         <span class="open">ひらく →</span>
       </a>
 
       <a class="card" href="keisan.html">
         <div class="top"><span class="emoji">🧮</span><h2>計算プリント</h2></div>
-        <p>学年をえらんでボタンを押すだけ。毎回ちがう問題と丸つけ用の答えも自動生成。宿題・朝学・小テストにそのまま印刷。</p>
+        <p>学年をえらんでボタンを押すだけ。毎回ちがう問題と丸つけ用の答えも自動生成。宿題・朝学・小テストに<span class="nb">そのまま印刷。</span></p>
         <span class="open">ひらく →</span>
       </a>
 
       <a class="card" href="timer.html">
         <div class="top"><span class="emoji">⏱️</span><h2>黒板タイマー</h2></div>
-        <p>教室の黒板みたいなタイマー。音を消しても“光”で終わりが伝わるから、聴覚過敏の子にも安心。授業の流れを連続でセットすれば自動で次へ。</p>
+        <p>教室の黒板みたいなタイマー。音を消しても“光”で終わりが伝わるから、聴覚過敏の子にも安心。授業の流れを連続でセットすれば<span class="nb">自動で次へ。</span></p>
         <span class="open">ひらく →</span>
       </a>
 
       <a class="card" href="touban.html">
         <div class="top"><span class="emoji">🙋</span><h2>係・当番ぎめ</h2><span class="badge">NEW</span></div>
-        <p>名簿と係を入れてボタンを押すだけ。なるべく公平に・全員にいきわたるよう自動で決定。そのまま黒板に映す・印刷して掲示。もう一度押せば前回と違う担当でローテーション。</p>
+        <p>名簿と係を入れてボタンを押すだけ。なるべく公平に・全員にいきわたるよう自動で決定。そのまま黒板に映す・印刷して掲示。もう一度押せば前回と違う担当で<span class="nb">ローテーション。</span></p>
         <span class="open">ひらく →</span>
       </a>
     </div>
@@ -157,7 +160,7 @@
     <div class="setup-ic">📋</div>
     <div class="setup-tx">
       <div class="st-h">クラス名簿 <span class="st-badge">NEW</span></div>
-      <div class="st-p">名前を一度だけ登録しておけば、席替え・係/当番など<b>どの道具からでもワンタップで呼び出し</b>。もう毎回打ち直さなくてOK。名前はこの端末の外に出ません。</div>
+      <div class="st-p">名前を一度だけ登録しておけば、席替え・係/当番など<b>どの道具からでもワンタップで呼び出し</b>。もう毎回打ち直さなくてOK。名前は<span class="nb">この端末の外に出ません。</span></div>
     </div>
     <a class="setup-btn" href="meibo.html">名簿をひらく →</a>
   </div>
