@@ -1,0 +1,604 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="manifest" href="roulette.webmanifest">
+<meta name="theme-color" content="#7fb35a">
+<link rel="apple-touch-icon" href="icon-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="ルーレット指名">
+<title>ルーレット指名｜ニッチョク。</title>
+<meta name="description" content="クラスの名前を入れてボタンを押すだけ。今日あてる人を、ルーレットでランダムに。「もう当てた人は外す」モードで、いつも同じ子ばかりにならず、みんなに順番がまわります。名前は端末の中だけ。登録不要・無料。">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="ニッチョク。">
+<meta property="og:title" content="ルーレット指名｜ニッチョク。">
+<meta property="og:description" content="名前を入れてボタンを押すだけ。今日あてる人をルーレットでランダムに。「当てた人を外す」でみんなに順番がまわります。名前は端末の中だけ。登録不要・無料。">
+<meta property="og:url" content="https://senseisupportai-lab.github.io/sensei-tools/roulette.html">
+<meta property="og:image" content="https://senseisupportai-lab.github.io/sensei-tools/ogp.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:site" content="@sensei_support">
+<meta name="twitter:image" content="https://senseisupportai-lab.github.io/sensei-tools/ogp.png">
+<style>
+  * { box-sizing: border-box; }
+  body { font-family:"Hiragino Sans","Hiragino Kaku Gothic ProN","Yu Gothic","Noto Sans JP",sans-serif;
+    margin:0; background:linear-gradient(#f7faf3,#eef4e8); color:#2f3b2a; line-height:1.6; }
+  .wrap { max-width:760px; margin:0 auto; padding:20px 16px 60px; }
+  h1 { font-size:24px; color:#3f6b27; margin:6px 0 2px; }
+  .sub { color:#6c8a52; font-size:13px; margin-bottom:18px; }
+  .hint { color:#8a9a7c; font-size:11.5px; font-weight:normal; }
+  textarea { width:100%; border:1.5px solid #cfe0bb; border-radius:8px; padding:8px 10px; font-size:13px;
+             font-family:inherit; resize:vertical; line-height:1.8; }
+
+  .step{ background:#fff; border:1.5px solid #dde7d0; border-radius:14px; padding:14px 18px; margin-bottom:14px; box-shadow:0 3px 10px rgba(90,138,60,.06); }
+  .steptitle{ font-size:17px; font-weight:bold; color:#3f6b27; display:flex; align-items:center; margin-bottom:10px; }
+  .stepnum{ display:inline-flex; width:28px; height:28px; background:#7fb35a; color:#fff; border-radius:50%;
+            align-items:center; justify-content:center; font-weight:bold; margin-right:10px; flex:0 0 auto; }
+
+  .go { display:inline-flex; align-items:center; gap:8px; background:#7fb35a; color:#fff; border:none;
+        border-radius:30px; padding:12px 28px; font-size:17px; font-weight:bold; cursor:pointer; margin:4px 4px 0;
+        box-shadow:0 3px 0 #5a8a3c; transition:transform .05s; }
+  .go:active { transform:translateY(2px); box-shadow:0 1px 0 #5a8a3c; }
+  .go:disabled { background:#bcd0a6; box-shadow:0 3px 0 #a5bd8f; cursor:default; }
+  .ghost { background:#fff; color:#5a8a3c; border:1.5px solid #9cc473; box-shadow:none; padding:9px 18px; font-size:14px; }
+
+  .ckbox{ display:inline-flex; align-items:center; gap:7px; margin:0; font-weight:bold; color:#3f6b27; font-size:14.5px; cursor:pointer; }
+  .ckbox input{ width:18px; height:18px; accent-color:#7fb35a; }
+  .optrow{ display:flex; gap:18px; flex-wrap:wrap; align-items:center; }
+
+  /* ── ルーレット盤 ── */
+  .stage{ background:#fff; border:1.5px solid #dde7d0; border-radius:14px; padding:18px 16px 22px;
+          box-shadow:0 3px 10px rgba(90,138,60,.06); text-align:center; }
+  .wheelbox{ position:relative; width:min(82vw,400px); aspect-ratio:1/1; margin:6px auto 4px; }
+  .pointer{ position:absolute; top:-6px; left:50%; transform:translateX(-50%); z-index:4;
+            font-size:34px; line-height:1; color:#e0531f; filter:drop-shadow(0 2px 2px rgba(0,0,0,.3)); }
+  /* 複数人指名のときの追加の針 */
+  #xpointers{ position:absolute; inset:0; pointer-events:none; z-index:4; }
+  .xpointer{ position:absolute; font-size:34px; line-height:1; color:#e0531f;
+             filter:drop-shadow(0 2px 2px rgba(0,0,0,.3)); animation:ptrpop .3s ease-out; }
+  @keyframes ptrpop{ from{ opacity:0; } to{ opacity:1; } }
+  .wheel-svg{ width:100%; height:100%; display:block; transform-origin:50% 50%;
+              border-radius:50%; box-shadow:0 6px 18px rgba(0,0,0,.18); background:#fff; }
+  .hub{ position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); z-index:5;
+        width:23%; height:23%; border-radius:50%; border:4px solid #fff; cursor:pointer;
+        background:radial-gradient(circle at 35% 30%, #9fd07a, #5a8a3c);
+        color:#fff; font-weight:bold; font-size:clamp(13px,3.6vw,17px); box-shadow:0 3px 8px rgba(0,0,0,.25);
+        display:flex; align-items:center; justify-content:center; transition:transform .08s; }
+  .hub:active{ transform:translate(-50%,-50%) scale(.94); }
+  .hub:disabled{ cursor:default; opacity:.85; }
+
+  .result{ min-height:30px; margin-top:6px; }
+  .result .lead{ color:#8a9a7c; font-size:13px; }
+  .result .win{ display:flex; flex-wrap:wrap; justify-content:center; gap:4px 18px; margin-top:2px; }
+  .winname{ font-size:clamp(28px,9vw,46px); font-weight:800; color:#3f6b27; letter-spacing:.04em; line-height:1.25; }
+  .winname.pop{ animation:pop .5s cubic-bezier(.2,1.4,.4,1); }
+  @keyframes pop{ 0%{ transform:scale(.4); opacity:0; } 60%{ transform:scale(1.12); } 100%{ transform:scale(1); opacity:1; } }
+  .remain{ display:inline-block; margin:10px auto 0; font-size:12.5px; color:#3f6b27; background:#eef6e4;
+           border:1px solid #cfe3b8; border-radius:20px; padding:4px 13px; }
+
+  .historybox{ margin-top:12px; text-align:left; }
+  .historybox .hlabel{ font-size:12.5px; color:#8a9a7c; font-weight:bold; margin-bottom:5px; }
+  .chips{ display:flex; flex-wrap:wrap; gap:6px; }
+  .chip{ background:#eef6e4; border:1px solid #cfe3b8; color:#3f6b27; border-radius:18px; padding:3px 11px; font-size:13px; font-weight:bold; }
+  .chip .n{ color:#9bae86; font-size:11px; margin-right:3px; }
+
+  #msg { font-size:13px; margin:10px 0 0; min-height:8px; }
+  #msg.warn { color:#b9622a; font-weight:bold; }
+
+  .safe{ background:#eef6e4; border:1px solid #cfe3b8; border-radius:9px; padding:9px 12px; margin-top:10px;
+         font-size:12.5px; color:#3f6b27; line-height:1.7; }
+  .footer{ text-align:center; margin-top:30px; padding:16px; border-top:1px solid #e0e8d4; font-size:13px; color:#6c8a52; line-height:2; }
+  .footer a{ color:#3f6b27; font-weight:bold; text-decoration:none; }
+  .about{ max-width:560px; margin:0 auto 14px; text-align:left; background:#fbfdf8; border:1px solid #e6edda;
+          border-radius:10px; padding:11px 14px; font-size:12.5px; color:#5b6b50; line-height:1.95; }
+  .about b{ color:#3f6b27; }
+  .hero{ text-align:center; margin:4px 0 20px; }
+  .hero .tagline{ font-size:13.5px; color:#5a8a3c; margin:2px auto 8px; max-width:540px; }
+  .hero .sub{ margin-left:auto; margin-right:auto; max-width:540px; }
+  .xtop{ margin:5px 0 0; font-size:13px; }
+  .xtop a{ color:#3f6b27; text-decoration:none; font-weight:bold; }
+  .counter{ display:inline-block; margin:10px auto 0; font-size:13px; color:#3f6b27; background:#eef6e4;
+            border:1px solid #cfe3b8; border-radius:20px; padding:5px 14px; }
+
+  /* 今日のメンバー（欠席切り替え） */
+  .members{ display:flex; flex-wrap:wrap; gap:6px; margin-top:6px; }
+  .mchip{ background:#eef6e4; border:1.5px solid #cfe3b8; color:#3f6b27; border-radius:18px; padding:5px 13px;
+          font-size:13.5px; font-weight:bold; cursor:pointer; user-select:none; transition:transform .05s; font-family:inherit; }
+  .mchip:active{ transform:scale(.93); }
+  .mchip.absent{ background:#f3f3ee; border-style:dashed; border-color:#dcdcd2; color:#b3bfa6; }
+
+  /* 1回で指名する人数 */
+  .pickrow{ display:inline-flex; gap:6px; flex-wrap:wrap; }
+  .pk{ background:#fff; border:1.5px solid #cfe0bb; color:#5a8a3c; border-radius:20px; padding:6px 14px;
+       font-size:14px; font-weight:bold; cursor:pointer; font-family:inherit; }
+  .pk.on{ background:#7fb35a; border-color:#7fb35a; color:#fff; }
+
+  /* 黒板モード（全画面で大きく） */
+  .boardExit{ display:none; }
+  .stage.board-mode{ position:fixed; inset:0; z-index:50; border:0; border-radius:0; padding:18px; max-width:none;
+    background:radial-gradient(140% 120% at 80% 112%, rgba(0,0,0,.30), transparent 60%), #2E4D3E;
+    display:flex; flex-direction:column; align-items:center; justify-content:center; gap:10px; overflow:auto; }
+  .stage.board-mode .wheelbox{ width:min(62vh,86vw); margin:4px auto; }
+  .stage.board-mode .result .lead{ color:#cfe0bb; font-size:clamp(15px,3.4vh,20px); }
+  .stage.board-mode .winname{ color:#F5F1E8; text-shadow:0 2px 0 rgba(0,0,0,.3); font-size:clamp(40px,12vh,98px); }
+  .stage.board-mode .remain{ background:rgba(245,241,232,.12); color:#F5F1E8; border-color:rgba(245,241,232,.35); }
+  .stage.board-mode .historybox{ display:none; }
+  .stage.board-mode #spinBtn{ font-size:clamp(18px,3.4vh,24px); padding:14px 42px; }
+  .stage.board-mode #resetBtn, .stage.board-mode #boardBtn{ color:#F5F1E8; border-color:rgba(245,241,232,.5); background:transparent; }
+  .stage.board-mode .boardExit{ display:inline-flex; position:fixed; top:14px; right:16px; color:#F5F1E8;
+    background:rgba(0,0,0,.22); border:1.5px solid rgba(245,241,232,.45); margin:0; }
+
+  /* 紙吹雪 */
+  #confetti{ position:fixed; inset:0; pointer-events:none; overflow:hidden; z-index:9; }
+  .conf{ position:absolute; width:9px; height:14px; border-radius:2px; will-change:transform,opacity; }
+  @keyframes fall{ to{ transform:translateY(108vh) rotate(720deg); opacity:0; } }
+  @media (max-width:600px){ .wrap{ padding:14px 11px 50px; } .step,.stage{ padding:12px 13px; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <a href="https://senseisupportai-lab.github.io/sensei-tools/" style="display:inline-block;margin:0 0 8px;color:#5a8a3c;font-size:13px;font-weight:bold;text-decoration:none;">← 勝手ツール一覧</a>
+  <div class="hero">
+    <h1>🎯 ルーレット指名</h1>
+    <div class="tagline">名前を入れてボタンを押すだけ。今日あてる人を、くじびきみたいにランダムで。</div>
+    <div class="sub">「いつも同じ子ばかり…」を防ぐ“当てた人を外す”モードつき。ぐるっと回って、みんなに順番がまわります。</div>
+    <div class="xtop"><a href="https://x.com/sensei_support" target="_blank" rel="noopener">𝕏 @sensei_support（つくった人：たんく）</a></div>
+    <div id="counter" class="counter" style="display:none;"></div>
+  </div>
+
+  <!-- ルーレット盤 -->
+  <div class="stage" id="stage">
+    <button class="go ghost boardExit" id="boardExit" type="button" style="font-size:13px;">✕ とじる</button>
+    <div class="wheelbox">
+      <div class="pointer">▼</div>
+      <div id="xpointers"></div>
+      <svg id="wheel" class="wheel-svg" viewBox="0 0 200 200" aria-hidden="true"></svg>
+      <button id="hub" class="hub" type="button">まわす</button>
+    </div>
+    <div class="result">
+      <div class="lead" id="resLead">下のボタン、または中央の○を押してスタート</div>
+      <div class="win" id="resWin"></div>
+    </div>
+    <div id="remain" class="remain" style="display:none;"></div>
+    <div style="margin-top:12px;">
+      <button class="go" id="spinBtn" type="button">🎯 まわす！</button>
+      <button class="go ghost" id="boardBtn" type="button" style="font-size:13px;">🟩 黒板で大きく</button>
+      <button class="go ghost" id="resetBtn" type="button" style="font-size:13px;">🔄 ぜんぶ戻す</button>
+    </div>
+    <div class="historybox" id="historybox" style="display:none;">
+      <div class="hlabel">これまであたった人</div>
+      <div class="chips" id="chips"></div>
+    </div>
+  </div>
+
+  <!-- 名前を入れる -->
+  <div class="step" style="margin-top:14px;">
+    <div class="steptitle"><span class="stepnum">1</span>クラスの名前を入れる（1行に1人）</div>
+    <textarea id="names" rows="6">あおい
+はると
+ゆい
+そうた
+めい
+りく
+さくら
+かなで
+ゆうき
+ひなた
+こはく
+つむぎ
+れん
+あかり
+だいち
+みお</textarea>
+    <div id="countInfo" style="margin-top:6px; font-size:14px; color:#3f6b27; font-weight:bold;"></div>
+    <div class="hint" style="margin-top:2px;">※はじめはサンプルが入っています。自分のクラスに置きかえてね。</div>
+    <div class="safe">🔒 入力した名前は、この端末の中だけに保存されます。私たちのサーバーには送信されません。</div>
+    <div style="margin-top:11px; display:flex; gap:8px; flex-wrap:wrap; align-items:center;">
+      <button type="button" class="go ghost" id="meiboLoad" style="font-size:13px; padding:8px 15px; margin:0;">📋 名簿を読み込む</button>
+      <button type="button" class="go ghost" id="meiboSave" style="font-size:13px; padding:8px 15px; margin:0;">💾 この名前を名簿に保存</button>
+      <span id="meiboMsg" style="font-size:12.5px; font-weight:bold; color:#3f6b27;"></span>
+    </div>
+    <div class="hint" style="margin-top:5px;">📋 名簿は一度ほぞんすれば、<a href="meibo.html" style="color:#5a8a3c; font-weight:bold;">他の道具</a>でも使い回せます（この端末の中だけ）。</div>
+  </div>
+
+  <!-- 今日のメンバー -->
+  <div class="step">
+    <div class="steptitle"><span class="stepnum">2</span>今日のメンバー
+      <span style="font-size:12px; color:#8a9a7c; font-weight:normal; margin-left:7px;">タップで「欠席」に（名簿は消えません）</span>
+    </div>
+    <div id="absInfo" style="font-size:13px; color:#3f6b27; font-weight:bold; margin-bottom:2px;"></div>
+    <div class="members" id="members"></div>
+    <button type="button" class="go ghost" id="absClear" style="font-size:12.5px; margin-top:11px;">↩️ 欠席をリセット（全員そろった）</button>
+  </div>
+
+  <!-- せってい -->
+  <div class="step">
+    <div class="steptitle"><span class="stepnum">3</span>まわしかた</div>
+    <div class="optrow" style="margin-bottom:11px;">
+      <span style="font-weight:bold; color:#3f6b27; font-size:14px;">1回で指名する人数</span>
+      <span class="pickrow" id="pickSel">
+        <button type="button" class="pk on" data-n="1">1人</button>
+        <button type="button" class="pk" data-n="2">2人</button>
+        <button type="button" class="pk" data-n="3">3人</button>
+        <button type="button" class="pk" data-n="4">4人</button>
+        <button type="button" class="pk" data-n="5">5人</button>
+      </span>
+    </div>
+    <div class="optrow">
+      <label class="ckbox"><input type="checkbox" id="excl" checked>当てた人を外す（みんなに順番がまわる）</label>
+      <label class="ckbox" style="color:#5b6b50; font-weight:normal;"><input type="checkbox" id="snd" checked>🔔 音</label>
+      <label class="ckbox" style="color:#5b6b50; font-weight:normal;"><input type="checkbox" id="tts" checked>🔊 名前を読み上げる</label>
+    </div>
+    <div class="hint" style="margin-top:7px;">「当てた人を外す」ONで、一度あたった子は盤から消えて全員にいきわたります（OFFは毎回ぜんいんが対象）。「人数」を2人以上にすると、いっぺんに指名できます。「🟩 黒板で大きく」は電子黒板・プロジェクタ向けの全画面表示です。</div>
+    <div id="msg"></div>
+  </div>
+
+  <div class="footer">
+    <div class="about">
+      <b>このツールについて</b><br>
+      発表や音読の指名で「気づくといつも同じ子」になりがち。かといって出席番号順だと、当たる前から子どもがソワソワ…。ぐるっと回るルーレットなら、ドキドキも楽しさもそのまま、しかも“当てた人を外す”でみんなに順番がまわります。名前はこの端末から出ません。<br>
+      作っているのは、学び続ける先生を応援したい「たんく」です。
+    </div>
+    「こんな道具が欲しい・ここを直して」は <a href="https://x.com/sensei_support" target="_blank" rel="noopener">𝕏 @sensei_support</a> へ🌱
+  </div>
+</div>
+<div id="confetti"></div>
+
+<script>
+const $ = id => document.getElementById(id);
+const rosterNames = () => $("names").value.split("\n").map(s=>s.trim()).filter(Boolean);
+
+/* ===== 状態 ===== */
+const LS_KEY="roulette_v1";
+let allNames = rosterNames();
+let picked = [];          // 当たった人（allNames のインデックス順）
+let wheelPool = [];       // いま盤に出ているインデックス
+let rot = 0;              // 盤の累積回転（度）
+let spinning = false;
+let wheelDirty = true;
+let lastWinner = -1;
+let tickTimer = null;
+let absent = new Set();    // 今日の欠席（allNames のインデックス）
+let pickCount = 1;         // 1回で指名する人数
+let absentNamesRestore = null;
+
+const COLORS = ["#7fb35a","#f2b705","#e0884f","#5aa9c8","#b07fc8","#e07a8b","#6fc18b","#f0a35a","#8aa0d8","#d98fae"];
+const reduced = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+const DUR = reduced ? 0.6 : 4.6;   // 回転時間（秒）
+
+const svg = $("wheel");
+svg.style.transition = `transform ${DUR}s cubic-bezier(.12,.72,.12,1)`;
+
+/* ===== 盤の描画 ===== */
+function pt(r,deg){ const t=deg*Math.PI/180; return [100 + r*Math.sin(t), 100 - r*Math.cos(t)]; }
+function clip(s){ return s.length>6 ? s.slice(0,6)+"…" : s; }
+
+function renderWheel(names){
+  const N=names.length;
+  let out="";
+  if(N===0){
+    out=`<circle cx="100" cy="100" r="96" fill="#f3f3ee"/><text x="100" y="104" text-anchor="middle" font-size="11" fill="#b9c4ac">名前を入れてね</text>`;
+    svg.innerHTML=out; return;
+  }
+  if(N===1){
+    const chars=[...clip(names[0])], L=chars.length;
+    const fs=Math.min(26, 150/Math.max(L,1)), step=fs*1.05, total=(L-1)*step;
+    out=`<circle cx="100" cy="100" r="96" fill="${COLORS[0]}"/>`;
+    for(let k=0;k<L;k++){
+      out+=`<text x="100" y="${(100-total/2+k*step).toFixed(1)}" text-anchor="middle" dominant-baseline="central" font-size="${fs.toFixed(1)}" font-weight="bold" fill="#fff">${esc(chars[k])}</text>`;
+    }
+    svg.innerHTML=out; return;
+  }
+  const seg=360/N;
+  const large = seg>180?1:0;
+  // 縦書きなので幅より“長さ”を使える＝人数が増えても大きめに表示できる
+  const baseFS = N<=8?18 : N<=14?16 : N<=20?14 : N<=28?12 : N<=36?10.5 : 9.5;
+  const rOuter=92, rInner = N<=20?40:46, colLen=rOuter-rInner, rMid=(rOuter+rInner)/2;
+  for(let i=0;i<N;i++){
+    const a0=i*seg, a1=(i+1)*seg, mid=(a0+a1)/2;
+    const [x0,y0]=pt(96,a0), [x1,y1]=pt(96,a1);
+    const col=COLORS[i % COLORS.length];
+    out+=`<path d="M100 100 L${x0.toFixed(2)} ${y0.toFixed(2)} A96 96 0 ${large} 1 ${x1.toFixed(2)} ${y1.toFixed(2)} Z" fill="${col}" stroke="#fff" stroke-width="1.2"/>`;
+    // 名前を“中心→外”に1文字ずつ縦に並べる（縦書き）
+    const chars=[...clip(names[i])], L=chars.length;
+    const step=Math.min(baseFS*1.02, colLen/L);
+    const fs=Math.min(baseFS, step/1.02);
+    const total=(L-1)*step;
+    for(let k=0;k<L;k++){
+      const r = rMid + total/2 - k*step;            // k=0 を外側（リム側）に → 外→内の縦書き
+      const [tx,ty]=pt(r, mid);
+      // 各文字を扇形の向き（放射方向）に回転＝円に沿った縦書き（スポーク状）
+      out+=`<text x="${tx.toFixed(2)}" y="${ty.toFixed(2)}" transform="rotate(${mid.toFixed(1)} ${tx.toFixed(2)} ${ty.toFixed(2)})" text-anchor="middle" dominant-baseline="central" font-size="${fs.toFixed(1)}" font-weight="bold" fill="#fff" style="paint-order:stroke;stroke:rgba(0,0,0,.22);stroke-width:.7px;">${esc(chars[k])}</text>`;
+    }
+  }
+  svg.innerHTML=out;
+}
+function esc(s){ return s.replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;"}[c])); }
+
+function desiredPool(){
+  let idx=allNames.map((_,i)=>i).filter(i=>!absent.has(i));   // 欠席はいつも対象外
+  if($("excl").checked) idx=idx.filter(i=>!picked.includes(i));
+  return idx;
+}
+function renderMembers(){
+  const box=$("members");
+  box.innerHTML=allNames.map((n,i)=>`<button type="button" class="mchip${absent.has(i)?" absent":""}" data-i="${i}">${esc(n)}</button>`).join("");
+  const ab=absent.size, N=allNames.length;
+  $("absInfo").textContent = N ? (ab? `出席 ${N-ab}人 ・ 欠席 ${ab}人` : `出席 ${N}人（全員そろっています）`) : "名前を入れてね。";
+}
+function rebuildWheel(){
+  // 盤の中身だけ入れ替える。回転角(rot)はリセットしない＝スナップ／逆回転が起きない。
+  wheelPool=desiredPool();
+  renderWheel(wheelPool.map(i=>allNames[i]));
+  renderFixedPointers();
+  wheelDirty=false;
+}
+function clearPointers(){ $("xpointers").innerHTML=""; }
+function addPointer(theta){
+  const el=document.createElement("div"); el.className="xpointer"; el.textContent="▼";
+  const rad=theta*Math.PI/180;
+  el.style.left=(50+52*Math.sin(rad)).toFixed(2)+"%";
+  el.style.top =(50-52*Math.cos(rad)).toFixed(2)+"%";
+  el.style.transform=`translate(-50%,-50%) rotate(${theta.toFixed(1)}deg)`;
+  $("xpointers").appendChild(el);
+}
+/* 指名人数ぶんの針を等間隔で常時表示（先頭の真上は常設の▼、2本目以降を追加） */
+function renderFixedPointers(){
+  clearPointers();
+  const M=wheelPool.length;
+  const N=M ? Math.min(pickCount, M) : 0;
+  for(let k=1;k<N;k++){ addPointer(k*360/N); }
+}
+
+/* ===== 回す ===== */
+function spin(){
+  if(spinning) return;
+  const msg=$("msg"); msg.className=""; msg.textContent="";
+  if(!allNames.length){ msg.className="warn"; msg.textContent="まず名前を入れてね（1行に1人）。"; return; }
+  if(wheelDirty) rebuildWheel();
+  if(!wheelPool.length){
+    const present=allNames.filter((_,i)=>!absent.has(i)).length;
+    $("resWin").innerHTML="";
+    if(present===0){ msg.className="warn"; msg.textContent="今日のメンバーがいません。欠席を見直してね。"; }
+    else { $("resLead").textContent="🎉 ぜんいんに当たりました！"; msg.className="warn"; msg.textContent="「🔄 ぜんぶ戻す」でもう一度はじめられます。"; }
+    return;
+  }
+  const SPINS=6;                                  // 毎回かならず6〜7回転ぶん・前方向にランダムに回す
+  rot = rot + SPINS*360 + Math.floor(Math.random()*360);
+
+  spinning=true;
+  $("spinBtn").disabled=true; $("hub").disabled=true;
+  $("resLead").textContent="まわっています…";
+  $("resWin").innerHTML="";                        // 針(▼)は回す前から出ているので消さない
+  startTicks();
+  requestAnimationFrame(()=>{ svg.style.transform=`rotate(${rot}deg)`; });
+  if(reduced) setTimeout(land, DUR*1000+30);   // reduced時はtransitionendが来ない場合の保険
+}
+
+function land(){
+  if(!spinning) return;
+  spinning=false; stopTicks();
+  $("spinBtn").disabled=false; $("hub").disabled=false;
+  // 固定の針（▼）が指している扇形＝この回の指名メンバー
+  const M=wheelPool.length, seg=360/M;
+  const N=Math.min(pickCount, M);
+  const round=[], seen=new Set();
+  for(let k=0;k<N;k++){
+    const pk=k*360/N;                                   // 針k の画面角度（真上から時計回り）
+    const a=(((pk - rot)%360)+360)%360;                 // その針が指す“盤の元角度”
+    const idx=wheelPool[Math.floor(a/seg)%M];
+    if(!seen.has(idx)){ seen.add(idx); round.push(idx); }
+  }
+  round.forEach(idx=>{ if(!picked.includes(idx)) picked.push(idx); });
+  if($("excl").checked) wheelDirty=true;                // 次回は外して再描画
+  revealRound(round);
+  updateHistory(); updateRemain();
+}
+function revealRound(round){
+  $("resLead").textContent = round.length>1 ? `きょうの指名は… ${round.length}人！` : "きょうの指名は…";
+  const w=$("resWin"); w.innerHTML="";
+  round.forEach((idx,k)=>{
+    setTimeout(()=>{
+      const s=document.createElement("span"); s.className="winname"; s.textContent=allNames[idx];
+      w.appendChild(s); void s.offsetWidth; s.classList.add("pop");
+      if(k>0) tick();
+      if(k===round.length-1){ chime(); confetti(); speak(round); }   // 全員出そろってから
+    }, k*(reduced?0:300));
+  });
+}
+function speak(round){
+  if(!$("tts").checked || !("speechSynthesis" in window)) return;
+  try{
+    const u=new SpeechSynthesisUtterance(round.map(i=>allNames[i]).join("、"));
+    u.lang="ja-JP"; u.rate=1.0; u.pitch=1.05;
+    speechSynthesis.cancel(); speechSynthesis.speak(u);
+  }catch(e){}
+}
+svg.addEventListener("transitionend", e=>{ if(e.propertyName==="transform") land(); });
+
+/* ===== 履歴・残り ===== */
+function updateHistory(){
+  const box=$("historybox"), chips=$("chips");
+  if(!picked.length){ box.style.display="none"; chips.innerHTML=""; return; }
+  box.style.display="block";
+  chips.innerHTML=picked.map((idx,i)=>`<span class="chip"><span class="n">${i+1}</span>${esc(allNames[idx])}</span>`).join("");
+}
+function updateRemain(){
+  const r=$("remain");
+  if(!$("excl").checked || !allNames.length){ r.style.display="none"; return; }
+  const left=allNames.length-picked.length;
+  r.style.display="inline-block";
+  r.textContent = left>0 ? `🎯 のこり ${left}人 / ぜんぶで ${allNames.length}人` : `🎉 ぜんいん（${allNames.length}人）あたりました！`;
+}
+
+/* ===== リセット ===== */
+function resetAll(){
+  picked=[]; wheelDirty=true; lastWinner=-1;
+  $("resWin").innerHTML="";
+  $("resLead").textContent="下のボタン、または中央の○を押してスタート";
+  $("msg").className=""; $("msg").textContent="";
+  rebuildWheel(); updateHistory(); updateRemain();
+}
+
+/* ===== 名前の編集 ===== */
+function refreshNames(){
+  allNames=rosterNames();
+  $("countInfo").textContent = allNames.length ? `→ いま ${allNames.length}人` : "";
+  picked=[]; absent.clear(); wheelDirty=true; lastWinner=-1;   // 名前が変わったら欠席もリセット
+  $("resWin").innerHTML=""; $("resLead").textContent="下のボタン、または中央の○を押してスタート";
+  renderMembers(); rebuildWheel(); updateHistory(); updateRemain(); persist();
+}
+$("names").addEventListener("input", refreshNames);
+$("excl").addEventListener("change", ()=>{ wheelDirty=true; rebuildWheel(); updateRemain(); persist(); });
+$("snd").addEventListener("change", persist);
+$("tts").addEventListener("change", persist);
+$("spinBtn").onclick=spin;
+$("hub").onclick=spin;
+$("resetBtn").onclick=resetAll;
+
+/* 欠席の切り替え */
+$("members").addEventListener("click", e=>{
+  const b=e.target.closest(".mchip"); if(!b) return;
+  const i=+b.dataset.i;
+  absent.has(i) ? absent.delete(i) : absent.add(i);
+  renderMembers(); wheelDirty=true; rebuildWheel(); updateRemain(); persist();
+});
+$("absClear").onclick=()=>{ absent.clear(); renderMembers(); wheelDirty=true; rebuildWheel(); updateRemain(); persist(); };
+
+/* 1回で指名する人数 */
+$("pickSel").addEventListener("click", e=>{
+  const b=e.target.closest(".pk"); if(!b) return;
+  pickCount=+b.dataset.n;
+  [...$("pickSel").children].forEach(x=>x.classList.toggle("on", x===b));
+  renderFixedPointers();                 // 針の本数を回す前から反映
+  persist();
+});
+
+/* 黒板モード（全画面で大きく） */
+function enterBoard(){ const s=$("stage"); s.classList.add("board-mode"); if(s.requestFullscreen){ s.requestFullscreen().catch(()=>{}); } }
+function exitBoard(){ $("stage").classList.remove("board-mode"); try{ if(document.fullscreenElement) document.exitFullscreen(); }catch(e){} }
+$("boardBtn").onclick=enterBoard;
+$("boardExit").onclick=exitBoard;
+document.addEventListener("fullscreenchange", ()=>{ if(!document.fullscreenElement) $("stage").classList.remove("board-mode"); });
+
+/* ===== 音（WebAudio・素材ファイル不要） ===== */
+let ac=null;
+function actx(){ try{ ac=ac||new (window.AudioContext||window.webkitAudioContext)(); if(ac.state==="suspended") ac.resume(); }catch(e){ ac=null; } return ac; }
+function tick(){
+  if(!$("snd").checked) return; const a=actx(); if(!a) return;
+  const o=a.createOscillator(), g=a.createGain();
+  o.type="square"; o.frequency.value=500+Math.random()*60;
+  o.connect(g); g.connect(a.destination);
+  const t=a.currentTime; g.gain.setValueAtTime(0.06,t); g.gain.exponentialRampToValueAtTime(0.0001,t+0.05);
+  o.start(t); o.stop(t+0.06);
+}
+function chime(){
+  if(!$("snd").checked) return; const a=actx(); if(!a) return;
+  [523,659,784,1047].forEach((f,i)=>{
+    const o=a.createOscillator(), g=a.createGain();
+    o.type="triangle"; o.frequency.value=f; o.connect(g); g.connect(a.destination);
+    const t=a.currentTime+i*0.085;
+    g.gain.setValueAtTime(0.0001,t); g.gain.linearRampToValueAtTime(0.22,t+0.02); g.gain.exponentialRampToValueAtTime(0.0001,t+0.45);
+    o.start(t); o.stop(t+0.47);
+  });
+}
+function startTicks(){
+  stopTicks();
+  if(!$("snd").checked || reduced) return;
+  let delay=55; const start=performance.now();
+  const fn=()=>{
+    if(!spinning) return;
+    tick();
+    delay*=1.13;                                   // だんだん間隔をのばす＝減速感
+    if(performance.now()-start < DUR*1000-250) tickTimer=setTimeout(fn,delay);
+  };
+  fn();
+}
+function stopTicks(){ if(tickTimer){ clearTimeout(tickTimer); tickTimer=null; } }
+
+/* ===== 紙吹雪 ===== */
+function confetti(){
+  if(reduced) return;
+  const box=$("confetti");
+  for(let i=0;i<26;i++){
+    const d=document.createElement("div"); d.className="conf";
+    d.style.left=(50+(Math.random()*40-20))+"vw";
+    d.style.top="-20px";
+    d.style.background=COLORS[i%COLORS.length];
+    const dur=1.1+Math.random()*0.9, delay=Math.random()*0.25;
+    d.style.transform="translateX("+(Math.random()*60-30)+"px)";
+    d.style.animation=`fall ${dur}s ${delay}s ease-in forwards`;
+    box.appendChild(d);
+    setTimeout(()=>d.remove(), (dur+delay)*1000+100);
+  }
+}
+
+/* ===== 保存（このツールの控え・この端末の中だけ） ===== */
+function persist(){
+  try{ localStorage.setItem(LS_KEY, JSON.stringify({
+    names:allNames, excl:$("excl").checked, snd:$("snd").checked, tts:$("tts").checked,
+    pick:pickCount, absent:[...absent].map(i=>allNames[i])
+  })); }catch(e){}
+}
+function restore(){
+  try{
+    const o=JSON.parse(localStorage.getItem(LS_KEY));
+    if(o){
+      if(Array.isArray(o.names)&&o.names.length) $("names").value=o.names.join("\n");
+      if(typeof o.excl==="boolean") $("excl").checked=o.excl;
+      if(typeof o.snd==="boolean") $("snd").checked=o.snd;
+      if(typeof o.tts==="boolean") $("tts").checked=o.tts;
+      if(o.pick>=1) pickCount=o.pick;
+      if(Array.isArray(o.absent)) absentNamesRestore=o.absent;
+    }
+  }catch(e){}
+}
+
+/* ===== クラス名簿（全ツール共通・この端末の中だけ） ===== */
+const MEIBO_KEY="sensei_meibo_v1";
+function loadMeibo(){ try{ const o=JSON.parse(localStorage.getItem(MEIBO_KEY)); return (o&&Array.isArray(o.names))?o:null; }catch(e){ return null; } }
+function saveMeibo(names){ try{ localStorage.setItem(MEIBO_KEY, JSON.stringify({names, updatedAt:Date.now()})); return true; }catch(e){ return false; } }
+function meiboFlash(t,warn){ const el=$("meiboMsg"); el.textContent=t; el.style.color=warn?"#b9622a":"#3f6b27"; }
+$("meiboLoad").onclick=()=>{
+  const m=loadMeibo();
+  if(!m||!m.names.length){ meiboFlash("まだ名簿がありません。名前を入れて「名簿に保存」か、名簿ページで登録してね。",true); return; }
+  $("names").value=m.names.join("\n");
+  refreshNames();
+  meiboFlash("名簿（"+m.names.length+"人）を読み込みました🌱");
+};
+$("meiboSave").onclick=()=>{
+  const names=rosterNames();
+  if(!names.length){ meiboFlash("先に名前を入れてね。",true); return; }
+  saveMeibo(names);
+  meiboFlash("名簿（"+names.length+"人）を保存しました🌱 他の道具でも使えます。");
+};
+
+/* ===== 起動 ===== */
+restore();
+allNames=rosterNames();
+if(absentNamesRestore){ allNames.forEach((n,i)=>{ if(absentNamesRestore.includes(n)) absent.add(i); }); }
+[...$("pickSel").children].forEach(x=>x.classList.toggle("on", +x.dataset.n===pickCount));
+$("countInfo").textContent = allNames.length ? `→ いま ${allNames.length}人` : "";
+renderMembers(); rebuildWheel(); updateRemain();
+
+/* 来訪カウンター：送るのは「アクセスがあった」事実のみ（入力データは一切送らない） */
+(function(){
+  const NS="senseisupportai-lab", KEY="roulette";
+  const counted = localStorage.getItem("roulette_counted")==="1";
+  fetch("https://abacus.jasoncameron.dev/"+(counted?"get":"hit")+"/"+NS+"/"+KEY)
+    .then(r=>r.json()).then(d=>{
+      if(typeof d.value==="number"){
+        const el=$("counter");
+        el.textContent="🌱 これまでに "+d.value.toLocaleString("ja-JP")+" 人の先生が使いました";
+        el.style.display="inline-block";
+        localStorage.setItem("roulette_counted","1");
+      }
+    }).catch(()=>{});
+})();
+/* Service Worker：表示の高速化＆保険として静かに登録するだけ */
+if("serviceWorker" in navigator){ window.addEventListener("load",()=>navigator.serviceWorker.register("sw.js").catch(()=>{})); }
+</script>
+</body>
+</html>

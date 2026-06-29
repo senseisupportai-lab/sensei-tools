@@ -1,0 +1,685 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="manifest" href="shojo.webmanifest">
+<meta name="theme-color" content="#7fb35a">
+<link rel="apple-touch-icon" href="icon-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="賞状・がんばりカード">
+<title>賞状・がんばりカードメーカー｜ニッチョク。</title>
+<meta name="description" content="賞状とがんばりカードをその場で作って印刷。名簿からクラス全員ぶんを一括作成。賞名・本文はえらぶだけ、デザインも選べる。登録不要・無料・端末内だけで完結。">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="ニッチョク。">
+<meta property="og:title" content="賞状・がんばりカードメーカー｜ニッチョク。">
+<meta property="og:description" content="賞状もがんばりカードも、書いて選んですぐ印刷。名簿からクラス全員ぶんを一括作成。登録不要・無料。">
+<meta property="og:url" content="https://senseisupportai-lab.github.io/sensei-tools/shojo.html">
+<meta property="og:image" content="https://senseisupportai-lab.github.io/sensei-tools/ogp.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:site" content="@sensei_support">
+<meta name="twitter:image" content="https://senseisupportai-lab.github.io/sensei-tools/ogp.png">
+<style>
+  * { box-sizing: border-box; }
+  body { font-family:"Hiragino Sans","Hiragino Kaku Gothic ProN","Yu Gothic","Noto Sans JP",sans-serif;
+    margin:0; background:linear-gradient(#f7faf3,#eef4e8); color:#2f3b2a; line-height:1.6; }
+  .wrap { max-width:1000px; margin:0 auto; padding:20px 16px 60px; }
+  h1 { font-size:24px; color:#3f6b27; margin:6px 0 2px; }
+  .sub { color:#6c8a52; font-size:13px; margin-bottom:6px; }
+  .hint { color:#8a9a7c; font-size:11.5px; font-weight:normal; }
+  label { font-weight:bold; color:#3f6b27; font-size:13px; }
+  textarea, input[type=text]{ width:100%; border:1.5px solid #cfe0bb; border-radius:8px; padding:8px 10px;
+    font-size:14px; font-family:inherit; }
+  textarea{ resize:vertical; line-height:1.7; }
+  select{ border:1.5px solid #cfe0bb; border-radius:8px; padding:7px 9px; font-size:14px; font-family:inherit; background:#fff; }
+
+  /* ステップUI（他ツールと統一） */
+  .step{ background:#fff; border:1.5px solid #dde7d0; border-radius:14px; padding:14px 18px; margin-bottom:14px; box-shadow:0 3px 10px rgba(90,138,60,.06); }
+  .steptitle{ font-size:17px; font-weight:bold; color:#3f6b27; display:flex; align-items:center; margin-bottom:10px; }
+  .stepnum{ display:inline-flex; width:28px; height:28px; background:#7fb35a; color:#fff; border-radius:50%;
+            align-items:center; justify-content:center; font-weight:bold; margin-right:10px; flex:0 0 auto; }
+  .fld{ margin-bottom:11px; }
+  .fld > label{ display:block; margin-bottom:5px; }
+  .row{ display:flex; gap:10px; flex-wrap:wrap; align-items:flex-end; }
+  .row .fld{ flex:1; min-width:150px; margin-bottom:0; }
+
+  /* 選択ボタン（種類・向き） */
+  .seg{ display:inline-flex; gap:6px; background:#eef6e4; border:1.5px solid #cfe3b8; border-radius:30px; padding:4px; }
+  .seg button{ border:none; background:transparent; color:#5a8a3c; font-weight:bold; font-size:14px;
+    border-radius:24px; padding:8px 18px; cursor:pointer; font-family:inherit; }
+  .seg button.on{ background:#7fb35a; color:#fff; box-shadow:0 2px 0 #5a8a3c; }
+
+  /* プリセット・チップ */
+  .chips{ display:flex; flex-wrap:wrap; gap:6px; margin-top:8px; }
+  .chip{ background:#eef6e4; border:1.5px solid #cfe3b8; color:#3f6b27; border-radius:20px; padding:5px 11px;
+    font-size:12.5px; cursor:pointer; user-select:none; }
+  .chip:hover{ background:#e0efce; }
+
+  /* テーマ・はんこ選択 */
+  .swatches{ display:flex; flex-wrap:wrap; gap:8px; }
+  .swatch{ width:42px; height:42px; border-radius:10px; cursor:pointer; border:3px solid transparent;
+    display:flex; align-items:center; justify-content:center; font-size:18px; }
+  .swatch.on{ border-color:#3f6b27; box-shadow:0 0 0 2px #cfe3b8; }
+  .seals{ display:flex; flex-wrap:wrap; gap:6px; }
+  .seal-pick{ width:40px; height:40px; border-radius:10px; border:1.5px solid #cfe0bb; background:#fff;
+    font-size:21px; cursor:pointer; display:flex; align-items:center; justify-content:center; }
+  .seal-pick.on{ border-color:#3f6b27; background:#eef6e4; }
+
+  .radio{ display:inline-flex; align-items:center; gap:7px; margin:0 16px 6px 0; font-weight:bold; color:#2f3b2a; font-size:14px; cursor:pointer; }
+  .radio input{ width:17px; height:17px; }
+
+  .go { display:inline-flex; align-items:center; gap:8px; background:#7fb35a; color:#fff; border:none;
+        border-radius:30px; padding:12px 28px; font-size:17px; font-weight:bold; cursor:pointer; margin:4px 4px 0;
+        box-shadow:0 3px 0 #5a8a3c; transition:transform .05s; font-family:inherit; }
+  .go:active { transform:translateY(2px); box-shadow:0 1px 0 #5a8a3c; }
+  .ghost { background:#fff; color:#5a8a3c; border:1.5px solid #9cc473; box-shadow:none; padding:9px 18px; font-size:14px; }
+  .safe{ background:#eef6e4; border:1px solid #cfe3b8; border-radius:9px; padding:8px 11px; margin-top:8px;
+         font-size:12.5px; color:#3f6b27; line-height:1.7; }
+
+  /* ───── プレビュー ───── */
+  .pvwrap{ background:#f1f4ec; border:1.5px solid #dde7d0; border-radius:14px; padding:16px; }
+  .pvhead{ display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:6px; margin-bottom:10px; }
+  .pvhead .ttl{ font-weight:bold; color:#3f6b27; font-size:15px; }
+  .pvhead .cnt{ font-size:12.5px; color:#6c8a52; }
+  .stage{ display:flex; justify-content:center; }
+
+  /* 共通：賞状・カードの「紙」 */
+  .sheet{ position:relative; background:var(--pap); color:#222; overflow:hidden; }
+
+  /* ── 賞状（桜＋金の装飾画像を背景に、中央へ文字を重ねる） ── */
+  /* 文字サイズは JS が紙幅に比例して設定（画面＝要素幅／印刷＝A4実寸） */
+  .cert{ --pap:#fffdf5; width:100%; max-width:760px; aspect-ratio:297/210; box-shadow:0 8px 24px rgba(0,0,0,.18); }
+  .cert .cert-bg{ position:absolute; inset:0; width:100%; height:100%; object-fit:cover; }
+  .cert .body{ position:absolute; display:flex; z-index:1; }
+  /* 文字の基本色（墨＋金枠に映える濃色）。賞状は色テーマでなく1デザイン */
+  .cert .c-title{ color:#352a20; font-weight:800; line-height:1.12; }
+  .cert .c-name{ color:#1c241d; font-weight:800; }
+  .cert .c-body{ color:#39332b; }
+  .cert .c-date, .cert .c-issuer{ color:#4a4033; }
+  .cert .c-name .hon{ font-weight:700; color:#5b5142; }
+  .cert .blank{ display:inline-block; border-bottom:0.06em solid #6a5d49; }
+
+  /* 賞状・よこ書き：表題＝上中央（月桂樹の間）→受者名→本文→年月日・贈者名 */
+  .cert.yoko .body{ inset:8% 16% 10.5% 16%; flex-direction:column; align-items:center; text-align:center; }
+  .cert.yoko .c-title{ font-size:2.5em; letter-spacing:.16em; padding-left:.16em; margin:0; max-width:100%; }
+  .cert.yoko .c-cols{ display:flex; flex-direction:column; align-items:center; width:100%; flex:1; }
+  .cert.yoko .c-name{ font-size:1.78em; letter-spacing:.06em; margin-top:.55em; }
+  .cert.yoko .c-name .hon{ font-size:.5em; margin-left:.5em; letter-spacing:0; }
+  .cert.yoko .c-name .blank{ min-width:5em; }
+  .cert.yoko .c-body{ font-size:.95em; line-height:1.95; margin-top:.7em; max-width:94%; }
+  .cert.yoko .c-foot{ margin-top:auto; display:flex; flex-direction:column; align-items:center; gap:.22em; padding-top:.5em; }
+  .cert.yoko .c-date{ font-size:.8em; }
+  .cert.yoko .c-date .blank{ min-width:1.8em; }
+  .cert.yoko .c-issuer{ font-size:1.08em; font-weight:bold; letter-spacing:.04em; }
+  .cert.yoko .c-issuer .blank{ min-width:5em; }
+
+  /* 賞状・たて書き：表題は上中央で横書き／その下に縦組みの列（右→左）を絶対配置で高さ確定 */
+  .cert.tate .body{ inset:8% 12% 9% 12%; display:block; }
+  .cert.tate .c-title{ position:absolute; top:0; left:50%; transform:translateX(-50%); white-space:nowrap;
+    font-size:2.4em; letter-spacing:.16em; padding-left:.16em; }
+  .cert.tate .c-cols{ position:absolute; top:3em; left:0; right:0; bottom:0;
+    display:flex; flex-direction:row-reverse; align-items:flex-start; justify-content:center; gap:.9em; }
+  .cert.tate .c-mid, .cert.tate .c-foot{ display:contents; }
+  .cert.tate .c-name, .cert.tate .c-body,
+  .cert.tate .c-date, .cert.tate .c-issuer{ writing-mode:vertical-rl; text-orientation:mixed; }
+  .cert.tate .c-name{ white-space:nowrap; font-size:1.62em; letter-spacing:.12em; }
+  .cert.tate .c-name .hon{ font-size:.5em; letter-spacing:0; }
+  .cert.tate .c-name .blank{ border-bottom:none; border-left:0.06em solid #6a5d49; min-height:4.5em; }
+  .cert.tate .c-body{ height:100%; font-size:.92em; line-height:2.25; letter-spacing:.1em; }
+  .cert.tate .c-date{ align-self:flex-end; font-size:.82em; white-space:nowrap; }
+  .cert.tate .c-date .blank{ border-bottom:none; border-left:0.06em solid #6a5d49; min-height:1.4em; }
+  .cert.tate .c-issuer{ align-self:flex-end; font-size:1.12em; font-weight:bold; letter-spacing:.06em; white-space:nowrap; }
+  .cert.tate .c-issuer .blank{ border-bottom:none; border-left:0.06em solid #6a5d49; min-height:4.5em; }
+
+  /* ── がんばりカード ── */
+  .cardgrid{ display:grid; grid-template-columns:1fr; gap:12px; width:100%; max-width:380px; }
+  .gcard{ --pap:#fffef8; aspect-ratio:7/4.4; border:0.16em solid var(--ac); border-radius:0.6em;
+    box-shadow:0 5px 14px rgba(0,0,0,.12); position:relative; padding:5.5% 6.5%;
+    display:flex; flex-direction:column; overflow:hidden; }
+  .gcard::before{ content:""; position:absolute; inset:0.5em; border:0.08em dashed var(--gold); border-radius:0.45em; pointer-events:none; }
+  .gcard .g-top{ display:flex; align-items:center; gap:.4em; }
+  .gcard .g-seal{ font-size:1.45em; line-height:1; }
+  .gcard .g-title{ font-size:1.0em; font-weight:800; color:var(--ac); letter-spacing:.02em; line-height:1.2; }
+  .gcard .g-name{ font-size:1.55em; font-weight:800; color:#1d2b22; margin:.15em 0 .12em; line-height:1.1; }
+  .gcard .g-name .hon{ font-size:.46em; font-weight:700; color:#5b6b50; margin-left:.35em; }
+  .gcard .g-body{ font-size:.72em; line-height:1.55; color:#33402c; flex:1; overflow:hidden; }
+  .gcard .g-foot{ display:flex; justify-content:space-between; gap:.5em; font-size:.56em; color:#5b6b50; font-weight:bold; margin-top:.2em; }
+
+  .footer{ text-align:center; margin-top:34px; padding:16px; border-top:1px solid #e0e8d4; font-size:13px; color:#6c8a52; line-height:2; }
+  .footer a{ color:#3f6b27; font-weight:bold; text-decoration:none; }
+  .tagline{ font-size:13.5px; color:#5a8a3c; margin:2px 0 6px; }
+  .about{ max-width:540px; margin:0 auto 14px; text-align:left; background:#fbfdf8; border:1px solid #e6edda;
+          border-radius:10px; padding:11px 14px; font-size:12.5px; color:#5b6b50; line-height:1.95; }
+  .about b{ color:#3f6b27; }
+  .hero{ text-align:center; margin:4px 0 18px; }
+  .hero .tagline, .hero .sub{ margin-left:auto; margin-right:auto; }
+  .xtop{ margin:5px 0 0; font-size:13px; }
+  .xtop a{ color:#3f6b27; text-decoration:none; font-weight:bold; }
+  .counter{ display:inline-block; margin:10px auto 0; font-size:13px; color:#3f6b27; background:#eef6e4;
+            border:1px solid #cfe3b8; border-radius:20px; padding:5px 14px; }
+  #meiboMsg{ font-size:12.5px; font-weight:bold; color:#3f6b27; }
+
+  @media (max-width:600px){
+    .wrap{ padding:14px 10px 50px; }
+    .step{ padding:12px 13px; }
+    .seg button{ padding:8px 14px; }
+  }
+
+  /* ───── 印刷専用エリア（画面では非表示） ───── */
+  #printArea{ display:none; }
+  @media print{
+    .noprint{ display:none !important; }
+    body{ background:#fff; }
+    .wrap{ display:none; }
+    #printArea{ display:block; }
+    #printArea .cert{ width:100%; max-width:none; box-shadow:none; break-after:page; }
+    #printArea .cert:last-child{ break-after:auto; }
+    #printArea .cardgrid{ display:grid; grid-template-columns:1fr 1fr; gap:6mm; max-width:none; width:100%; }
+    #printArea .gcard{ box-shadow:none; break-inside:avoid; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <a class="noprint" href="https://senseisupportai-lab.github.io/sensei-tools/" style="display:inline-block;margin:0 0 8px;color:#5a8a3c;font-size:13px;font-weight:bold;text-decoration:none;">← 勝手ツール一覧</a>
+  <div class="hero noprint">
+    <h1>🏆 賞状・がんばりカードメーカー</h1>
+    <div class="tagline">書いて・えらんで、すぐ印刷。賞状もがんばりカードも、この端末の中だけで作れます。</div>
+    <div class="sub">名簿をよみこめば、クラス全員ぶんを一括で。日々のごほうびにも、年度末の表彰にも。</div>
+    <div class="xtop"><a href="https://x.com/sensei_support" target="_blank" rel="noopener">𝕏 @sensei_support（つくった人：たんく）</a></div>
+    <div id="counter" class="counter" style="display:none;"></div>
+  </div>
+
+  <!-- STEP 1 種類 -->
+  <div class="step">
+    <div class="steptitle"><span class="stepnum">1</span>種類をえらぶ</div>
+    <div class="row" style="align-items:center;">
+      <div class="seg" id="modeSeg">
+        <button type="button" data-mode="cert" class="on">🏅 賞状（A4・1枚）</button>
+        <button type="button" data-mode="card">🌸 がんばりカード（小・複数）</button>
+      </div>
+      <div id="orientWrap" class="seg" style="background:#fff;border-color:#cfe0bb;">
+        <button type="button" data-orient="yoko" class="on">よこ書き</button>
+        <button type="button" data-orient="tate">たて書き</button>
+      </div>
+    </div>
+    <div class="hint" style="margin-top:8px;" id="modeHint">賞状はA4に1枚。表彰・年度末向き。</div>
+  </div>
+
+  <!-- STEP 2 中身 -->
+  <div class="step">
+    <div class="steptitle"><span class="stepnum">2</span>中身を書く</div>
+    <div class="fld">
+      <label>賞の名前</label>
+      <input type="text" id="title" value="がんばったで賞" maxlength="24">
+      <div class="chips" id="titleChips"></div>
+    </div>
+    <div class="fld">
+      <label>本文・ひとこと <span class="hint">（文中の <b>{なまえ}</b> は、その子の名前に置きかわります）</span></label>
+      <textarea id="body" rows="3">あなたは まいにち こつこつと よく がんばりました。ここに そのがんばりを たたえます。</textarea>
+      <div class="chips" id="bodyChips"></div>
+    </div>
+    <div class="row">
+      <div class="fld" style="flex:1.3;">
+        <label>日付</label>
+        <input type="text" id="date" maxlength="20">
+      </div>
+      <div class="fld" style="flex:2;">
+        <label>贈り主（クラス・先生の名前）</label>
+        <input type="text" id="issuer" value="たんく先生" maxlength="28">
+      </div>
+    </div>
+  </div>
+
+  <!-- STEP 3 だれに -->
+  <div class="step">
+    <div class="steptitle"><span class="stepnum">3</span>だれにおくる？</div>
+    <div style="margin-bottom:8px;">
+      <label class="radio"><input type="radio" name="target" value="one" checked> ひとりに</label>
+      <label class="radio"><input type="radio" name="target" value="all"> クラス全員ぶん（名簿から）</label>
+    </div>
+
+    <div id="oneBox" class="fld">
+      <label>なまえ</label>
+      <div class="row">
+        <input type="text" id="oneName" value="あおい" maxlength="20" style="flex:2;">
+        <select id="honor" style="flex:0;">
+          <option>さん</option><option>くん</option><option>ちゃん</option>
+          <option selected>どの</option><option>さま</option><option value="">（なし）</option>
+        </select>
+      </div>
+    </div>
+
+    <div id="allBox" style="display:none;">
+      <div class="fld">
+        <label>クラスの名前（1行に1人）</label>
+        <textarea id="names" rows="5">あおい
+はると
+ゆい
+そうた
+めい
+りく</textarea>
+        <div id="countInfo" style="margin-top:5px;font-size:13px;color:#3f6b27;font-weight:bold;"></div>
+      </div>
+      <div class="row" style="align-items:center;">
+        <label class="radio" style="margin:0;font-weight:bold;">敬称
+          <select id="honorAll">
+            <option selected>さん</option><option>くん</option><option>ちゃん</option>
+            <option>どの</option><option>さま</option><option value="">（なし）</option>
+          </select>
+        </label>
+        <button type="button" class="go ghost" id="meiboLoad" style="font-size:13px;padding:8px 15px;margin:0;">📋 名簿を読み込む</button>
+        <button type="button" class="go ghost" id="meiboSave" style="font-size:13px;padding:8px 15px;margin:0;">💾 この名前を名簿に保存</button>
+        <span id="meiboMsg"></span>
+      </div>
+      <div class="hint" style="margin-top:5px;">📋 名簿は一度ほぞんすれば、<a href="meibo.html" style="color:#5a8a3c;font-weight:bold;">他の道具</a>でも使い回せます（この端末の中だけ）。</div>
+    </div>
+    <div class="safe">🔒 入力した名前や本文は、この端末の中だけに保存されます。私たちのサーバーには送信されません。</div>
+  </div>
+
+  <!-- STEP 4 デザイン -->
+  <div class="step">
+    <div class="steptitle"><span class="stepnum">4</span>デザイン</div>
+    <div id="designCert" class="hint" style="display:none;">🌸 賞状は「桜＋金わく」のデザインです（色ちがいは順次ふやします）。</div>
+    <div id="designCard" class="row" style="align-items:flex-start;">
+      <div class="fld" style="flex:1;min-width:220px;">
+        <label>いろ</label>
+        <div class="swatches" id="themes"></div>
+      </div>
+      <div class="fld" style="flex:1;min-width:220px;">
+        <label>はんこ（左上のマーク）</label>
+        <div class="seals" id="seals"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- プレビュー -->
+  <div class="pvwrap noprint">
+    <div class="pvhead">
+      <span class="ttl">プレビュー</span>
+      <span class="cnt" id="pvCount"></span>
+    </div>
+    <div class="stage" id="stage"></div>
+  </div>
+
+  <div class="noprint" style="text-align:center; margin-top:18px;">
+    <button class="go" id="printBtn">🖨 印刷する</button>
+    <button class="go ghost" id="exportBtn" style="font-size:13px;">📁 控える</button>
+    <button class="go ghost" id="importBtn" style="font-size:13px;">📂 控えから戻す</button>
+    <input type="file" id="importFile" accept="application/json,.json" style="display:none;">
+  </div>
+  <div class="hint noprint" style="text-align:center; margin-top:6px;">印刷の設定で「背景のグラフィック」をオンにすると、色やわくがきれいに出ます。入力は自動でこの端末に残ります。</div>
+
+  <div class="noprint" style="text-align:center; margin-top:18px;">
+    <div class="hint">📲 スマホは「共有 → ホーム画面に追加」で、次からアイコンからすぐ開けます。</div>
+  </div>
+
+  <div class="footer noprint">
+    <div class="about">
+      <b>このツールについて</b><br>
+      「賞状やカードを一枚ずつ手書き・手作りするの、地味に時間がかかる…」をなくしたくて作りました。賞名と本文をえらんで、名簿をよみこめばクラス全員ぶんが一気に。日々の小さなごほうびにも、年度末の表彰にも。<br>
+      作っているのは、学び続ける先生を応援したい「たんく」です。
+    </div>
+    「こんなのが欲しい・ここを直して」は <a href="https://x.com/sensei_support" target="_blank" rel="noopener">𝕏 @sensei_support</a> へ🌱
+  </div>
+</div>
+
+<!-- 印刷専用：ここに全枚数を描画する -->
+<div id="printArea"></div>
+<style id="pagestyle"></style>
+
+<script>
+const $ = id => document.getElementById(id);
+
+/* ===== プリセット ===== */
+const TITLE_PRESETS = [
+  "🏆 がんばったで賞","💯 計算名人賞","📖 音読名人賞","✍️ 漢字名人賞","🌸 やさしさ賞",
+  "🤝 きょうりょく賞","🏃 元気いっぱい賞","🎯 もくひょうたっせい賞","🧹 そうじピカピカ賞",
+  "🙋 はっぴょうがんばり賞","📅 かいきん賞","🎉 1年間よくがんばったで賞"
+];
+const BODY_PRESETS = [
+  "あなたは まいにち こつこつと よく がんばりました。ここに そのがんばりを たたえます。",
+  "{なまえ}さんの がんばりは、クラスみんなの お手本です。これからも その調子で！",
+  "さいごまで あきらめずに やりぬきました。とても りっぱでした。",
+  "やさしい こころで 友だちを たくさん たすけてくれました。ありがとう。",
+  "むずかしいことにも すすんで チャレンジしました。その ゆうきが すばらしい。"
+];
+const THEMES = {
+  green:  { ac:"#2E4D3E", gold:"#c9a24a", pap:"#fffef8", sealbg:"#fff6dd", em:"🌿" },
+  sakura: { ac:"#c0577d", gold:"#e59ab0", pap:"#fff8fb", sealbg:"#ffe6ef", em:"🌸" },
+  sora:   { ac:"#2f6fb0", gold:"#6aa6dd", pap:"#f6fbff", sealbg:"#e3f0ff", em:"💧" },
+  sun:    { ac:"#c8870f", gold:"#e8b53d", pap:"#fffdf2", sealbg:"#fff3cf", em:"☀️" },
+  mono:   { ac:"#4a4a4a", gold:"#9a9a9a", pap:"#ffffff", sealbg:"#f0f0f0", em:"⬛" },
+};
+const SEALS = ["🏆","⭐","🌸","🎉","💮","🥇","👑","💯","🌟","🌈","🍀","💪"];
+
+/* ===== 状態 ===== */
+let state = {
+  mode:"cert", orient:"yoko", theme:"green", seal:"🏆", target:"one"
+};
+
+/* ===== ユーティリティ ===== */
+const rosterNames = () => $("names").value.split("\n").map(s=>s.trim()).filter(Boolean);
+function todayJP(){ const d=new Date(); return `${d.getFullYear()}年${d.getMonth()+1}月${d.getDate()}日`; }
+const FW = s => s.replace(/[0-9]/g, c => String.fromCharCode(c.charCodeAt(0)+0xFEE0)); // 半角数字→全角（縦書き用）
+const esc = s => (s||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+
+/* 現在の入力をまとめる */
+function readData(){
+  return {
+    mode:state.mode, orient:state.orient, theme:state.theme, seal:state.seal,
+    title:$("title").value.trim() || "がんばったで賞",
+    body:$("body").value.trim(),
+    date:$("date").value.trim() || todayJP(),
+    issuer:$("issuer").value.trim(),
+    target:state.target,
+    oneName:$("oneName").value.trim(),
+    honorOne:$("honor").value,
+    honorAll:$("honorAll").value,
+    names:$("names").value
+  };
+}
+/* 配布する相手リスト {name, honor} */
+function recipients(d){
+  if(d.target==="all"){
+    const ns = rosterNames();
+    return (ns.length?ns:["なまえ"]).map(n=>({name:n, honor:d.honorAll}));
+  }
+  return [{name:d.oneName||"なまえ", honor:d.honorOne}];
+}
+
+/* ===== 描画：賞状（桜＋金の装飾画像＋文字オーバーレイ） ===== */
+function certNode(d, rcp){
+  const el = document.createElement("div");
+  el.className = "sheet cert " + d.orient;
+  const tate = d.orient==="tate";
+  const blank = '<span class="blank"></span>';
+  const nameRaw = (rcp.name||"").trim(), issuerRaw = (d.issuer||"").trim(), dateRaw = (d.date||"").trim();
+  let title = esc(d.title);                 // 表題は横書きのままなので FW しない
+  let name = esc(nameRaw), issuer = esc(issuerRaw), date = esc(dateRaw), hon = esc(rcp.honor);
+  let body = esc((d.body||"").replace(/\{なまえ\}/g, rcp.name)).replace(/\n/g,"<br>");
+  if(tate){ name=FW(name); issuer=FW(issuer); date=FW(date); body=FW(body); }   // 縦書きは数字を全角で正立
+  // 両対応：入力があれば文字、空欄なら手書き用の罫線
+  const nameHTML   = nameRaw   ? name   : blank;
+  const issuerHTML = issuerRaw ? issuer : blank;
+  const dateHTML   = dateRaw   ? date   : ('令和'+blank+'年'+blank+'月'+blank+'日');
+  el.innerHTML = `
+    <img class="cert-bg" src="cert-sakura.jpg" alt="">
+    <div class="body">
+      <div class="c-title">${title}</div>
+      <div class="c-cols">
+        <div class="c-mid">
+          <div class="c-name">${nameHTML}${hon?`<span class="hon">${hon}</span>`:""}</div>
+          <div class="c-body">${body}</div>
+        </div>
+        <div class="c-foot">
+          <div class="c-date">${dateHTML}</div>
+          <div class="c-issuer">${issuerHTML}</div>
+        </div>
+      </div>
+    </div>`;
+  return el;
+}
+
+/* ===== 描画：がんばりカード ===== */
+function gcardNode(d, rcp){
+  const t = THEMES[d.theme];
+  const el = document.createElement("div");
+  el.className = "sheet gcard";
+  el.style.setProperty("--ac", t.ac);
+  el.style.setProperty("--gold", t.gold);
+  el.style.setProperty("--pap", t.pap);
+  let body = esc((d.body||"").replace(/\{なまえ\}/g, rcp.name)).replace(/\n/g,"<br>");
+  el.innerHTML = `
+    <div class="g-top"><span class="g-seal">${d.seal}</span><span class="g-title">${esc(d.title)}</span></div>
+    <div class="g-name">${esc(rcp.name)}${rcp.honor?`<span class="hon">${esc(rcp.honor)}</span>`:""}</div>
+    <div class="g-body">${body}</div>
+    <div class="g-foot"><span>${esc(d.date)}</span><span>${esc(d.issuer)}</span></div>`;
+  return el;
+}
+
+/* 文字サイズを紙幅に比例して設定。certW/cardW を渡せばその実寸幅で計算（印刷用）、
+   省略時は要素の実測幅（画面プレビュー用）。表題は月桂樹の間に収まるよう自動縮小。 */
+function sizeSheets(root, certW, cardW){
+  root.querySelectorAll(".cert").forEach(el=>{
+    const w = certW || el.clientWidth || el.offsetWidth; if(!w) return;
+    el.style.fontSize = (w / (el.classList.contains("tate") ? 34 : 28)) + "px";
+    const tt = el.querySelector(".c-title");
+    if(tt){
+      tt.style.fontSize = "";
+      const maxW = w * 0.44;
+      let fs = parseFloat(getComputedStyle(tt).fontSize), guard = 0;
+      while(tt.scrollWidth > maxW && fs > 8 && guard++ < 50){ fs *= 0.94; tt.style.fontSize = fs + "px"; }
+    }
+  });
+  root.querySelectorAll(".gcard").forEach(el=>{
+    const w = cardW || el.clientWidth || el.offsetWidth; if(!w) return;
+    el.style.fontSize = (w / 19) + "px";
+  });
+}
+
+/* ===== プレビュー ===== */
+function renderPreview(){
+  const d = readData();
+  const rcps = recipients(d);
+  const stage = $("stage");
+  stage.innerHTML = "";
+  if(d.mode==="cert"){
+    stage.appendChild(certNode(d, rcps[0]));
+  } else {
+    const grid = document.createElement("div"); grid.className="cardgrid";
+    grid.appendChild(gcardNode(d, rcps[0]));
+    stage.appendChild(grid);
+  }
+  sizeSheets(stage);
+  // 件数表示
+  if(d.target==="all"){
+    $("pvCount").textContent = `${rcps.length}人ぶん作ります（プレビューは1人目）`;
+  } else {
+    $("pvCount").textContent = "";
+  }
+}
+
+/* ===== 印刷 ===== */
+function setPageStyle(d){
+  let css;
+  if(d.mode==="cert"){
+    css = `@page{ size:A4 landscape; margin:8mm; }`;   // 賞状は用紙横（よこ書き・たて書きとも）
+  } else {
+    css = `@page{ size:A4 portrait; margin:10mm; }`;
+  }
+  $("pagestyle").textContent = css;
+}
+function printNow(){
+  const d = readData();
+  const rcps = recipients(d);
+  const area = $("printArea");
+  area.innerHTML = "";
+  if(d.mode==="cert"){
+    rcps.forEach(r => area.appendChild(certNode(d, r)));
+  } else {
+    const grid = document.createElement("div"); grid.className="cardgrid";
+    rcps.forEach(r => grid.appendChild(gcardNode(d, r)));
+    area.appendChild(grid);
+  }
+  setPageStyle(d);
+  // 印刷時の実寸で文字サイズを合わせる：一旦表示してサイズ計算
+  area.style.display = "block";
+  sizeSheets(area);
+  area.style.display = "";
+  window.print();
+}
+
+/* ===== UI構築 ===== */
+function buildChips(){
+  TITLE_PRESETS.forEach(t=>{
+    const b=document.createElement("button"); b.type="button"; b.className="chip"; b.textContent=t;
+    b.onclick=()=>{ $("title").value = t.replace(/^[^\sぁ-んァ-ヶ一-龠]+\s*/,"").trim() || t; persist(); renderPreview(); };
+    $("titleChips").appendChild(b);
+  });
+  BODY_PRESETS.forEach((t,i)=>{
+    const b=document.createElement("button"); b.type="button"; b.className="chip";
+    b.textContent = "文例" + (i+1);
+    b.title = t;
+    b.onclick=()=>{ $("body").value = t; persist(); renderPreview(); };
+    $("bodyChips").appendChild(b);
+  });
+}
+function buildThemes(){
+  Object.entries(THEMES).forEach(([k,t])=>{
+    const s=document.createElement("div"); s.className="swatch"+(k===state.theme?" on":"");
+    s.dataset.theme=k; s.style.background=t.pap; s.style.color=t.ac;
+    s.style.border = "3px solid "+(k===state.theme?"#3f6b27":t.gold);
+    s.textContent=t.em; s.title=k;
+    s.onclick=()=>{ state.theme=k; document.querySelectorAll("#themes .swatch").forEach(x=>{
+      x.classList.toggle("on", x.dataset.theme===k);
+      x.style.border = "3px solid "+(x.dataset.theme===k?"#3f6b27":THEMES[x.dataset.theme].gold);
+    }); persist(); renderPreview(); };
+    $("themes").appendChild(s);
+  });
+}
+function buildSeals(){
+  SEALS.forEach(e=>{
+    const b=document.createElement("button"); b.type="button"; b.className="seal-pick"+(e===state.seal?" on":"");
+    b.textContent=e; b.dataset.seal=e;
+    b.onclick=()=>{ state.seal=e; document.querySelectorAll("#seals .seal-pick").forEach(x=>x.classList.toggle("on", x.dataset.seal===e)); persist(); renderPreview(); };
+    $("seals").appendChild(b);
+  });
+}
+
+function applyModeUI(){
+  $("modeSeg").querySelectorAll("button").forEach(b=>b.classList.toggle("on", b.dataset.mode===state.mode));
+  $("orientWrap").style.display = state.mode==="cert" ? "" : "none";
+  $("orientWrap").querySelectorAll("button").forEach(b=>b.classList.toggle("on", b.dataset.orient===state.orient));
+  $("modeHint").textContent = state.mode==="cert"
+    ? "賞状はA4・用紙よこ（よこ書き／たて書きが選べます）。表彰・年度末向き。"
+    : "がんばりカードはA4に小さめのカードを複数面付け。日々のごほうび向き。";
+  $("designCert").style.display = state.mode==="cert" ? "" : "none";
+  $("designCard").style.display = state.mode==="cert" ? "none" : "";
+}
+function applyTargetUI(){
+  $("oneBox").style.display = state.target==="one" ? "" : "none";
+  $("allBox").style.display = state.target==="all" ? "" : "none";
+  updateCount();
+}
+function updateCount(){
+  const n = rosterNames().length;
+  $("countInfo").textContent = n ? `→ いま ${n}人 ぶん作ります` : "名前を入れてね。";
+}
+
+/* ===== 保存（この端末のみ） ===== */
+const LS_KEY="shojo_v1";
+function snapshot(){
+  return { v:1, state,
+    title:$("title").value, body:$("body").value, date:$("date").value, issuer:$("issuer").value,
+    oneName:$("oneName").value, honor:$("honor").value, honorAll:$("honorAll").value, names:$("names").value };
+}
+let restoring=false;
+function persist(){ if(restoring) return; try{ localStorage.setItem(LS_KEY, JSON.stringify(snapshot())); }catch(e){} }
+function applyState(s){
+  if(!s) return; restoring=true;
+  if(s.state) state = Object.assign(state, s.state);
+  if(s.title!=null) $("title").value=s.title;
+  if(s.body!=null) $("body").value=s.body;
+  if(s.date!=null) $("date").value=s.date;
+  if(s.issuer!=null) $("issuer").value=s.issuer;
+  if(s.oneName!=null) $("oneName").value=s.oneName;
+  if(s.honor!=null) $("honor").value=s.honor;
+  if(s.honorAll!=null) $("honorAll").value=s.honorAll;
+  if(s.names!=null) $("names").value=s.names;
+  // ラジオ
+  document.querySelectorAll('input[name=target]').forEach(r=>r.checked = (r.value===state.target));
+  restoring=false;
+  applyModeUI(); applyTargetUI();
+}
+
+/* ===== 控え（書き出し／戻す） ===== */
+function exportBackup(){
+  const data=JSON.stringify(snapshot(),null,2);
+  const url=URL.createObjectURL(new Blob([data],{type:"application/json"}));
+  const a=document.createElement("a"); a.href=url; a.download="賞状・カードの控え.json"; a.click();
+  setTimeout(()=>URL.revokeObjectURL(url),1000);
+}
+function importBackup(file){
+  const r=new FileReader();
+  r.onload=()=>{ try{ applyState(JSON.parse(r.result)); persist(); renderPreview(); buildAfterRestore(); alert("控えから戻しました🌱"); }
+    catch(e){ alert("ファイルを読めませんでした。"); } };
+  r.readAsText(file);
+}
+function buildAfterRestore(){
+  // テーマ・はんこの選択ハイライトを反映
+  document.querySelectorAll("#themes .swatch").forEach(x=>{
+    x.classList.toggle("on", x.dataset.theme===state.theme);
+    x.style.border = "3px solid "+(x.dataset.theme===state.theme?"#3f6b27":THEMES[x.dataset.theme].gold);
+  });
+  document.querySelectorAll("#seals .seal-pick").forEach(x=>x.classList.toggle("on", x.dataset.seal===state.seal));
+}
+
+/* ===== 名簿（全ツール共通） ===== */
+const MEIBO_KEY="sensei_meibo_v1";
+function loadMeibo(){ try{ const o=JSON.parse(localStorage.getItem(MEIBO_KEY)); return (o&&Array.isArray(o.names))?o:null; }catch(e){ return null; } }
+function saveMeibo(names){ try{ localStorage.setItem(MEIBO_KEY, JSON.stringify({names, updatedAt:Date.now()})); return true; }catch(e){ return false; } }
+function meiboFlash(t,warn){ const el=$("meiboMsg"); el.textContent=t; el.style.color=warn?"#b9622a":"#3f6b27"; }
+
+/* ===== イベント ===== */
+$("modeSeg").querySelectorAll("button").forEach(b=>b.onclick=()=>{ state.mode=b.dataset.mode; applyModeUI(); persist(); renderPreview(); });
+$("orientWrap").querySelectorAll("button").forEach(b=>b.onclick=()=>{ state.orient=b.dataset.orient; applyModeUI(); persist(); renderPreview(); });
+document.querySelectorAll('input[name=target]').forEach(r=>r.onchange=()=>{ state.target=r.value; applyTargetUI(); persist(); renderPreview(); });
+["title","body","date","issuer","oneName","honor","honorAll"].forEach(id=>{
+  $(id).addEventListener("input", ()=>{ persist(); renderPreview(); });
+  $(id).addEventListener("change", ()=>{ persist(); renderPreview(); });
+});
+$("names").addEventListener("input", ()=>{ updateCount(); persist(); renderPreview(); });
+$("meiboLoad").onclick=()=>{
+  const m=loadMeibo();
+  if(!m||!m.names.length){ meiboFlash("まだ名簿がありません。名前を入れて「名簿に保存」か、名簿ページで登録してね。",true); return; }
+  $("names").value=m.names.join("\n"); updateCount(); persist(); renderPreview();
+  meiboFlash("名簿（"+m.names.length+"人）を読み込みました🌱");
+};
+$("meiboSave").onclick=()=>{
+  const names=rosterNames();
+  if(!names.length){ meiboFlash("先に名前を入れてね。",true); return; }
+  saveMeibo(names); meiboFlash("名簿（"+names.length+"人）を保存しました🌱 他の道具でも使えます。");
+};
+$("printBtn").onclick=printNow;
+$("exportBtn").onclick=exportBackup;
+$("importBtn").onclick=()=>$("importFile").click();
+$("importFile").addEventListener("change", e=>{ if(e.target.files[0]) importBackup(e.target.files[0]); e.target.value=""; });
+window.addEventListener("resize", ()=>sizeSheets($("stage")));
+
+/* ===== 起動 ===== */
+buildChips(); buildThemes(); buildSeals();
+$("date").value = todayJP();
+const saved=(()=>{ try{ return JSON.parse(localStorage.getItem(LS_KEY)); }catch(e){ return null; } })();
+if(saved){ applyState(saved); buildAfterRestore(); }
+else { applyModeUI(); applyTargetUI(); }
+/* 直接リンクで種類を指定（#tate / #yoko / #card）。共有・確認用 */
+(function(){ const h=(location.hash||"").replace("#","");
+  if(h==="tate"){ state.mode="cert"; state.orient="tate"; }
+  else if(h==="yoko"){ state.mode="cert"; state.orient="yoko"; }
+  else if(h==="card"){ state.mode="card"; }
+  if(h){ applyModeUI(); applyTargetUI(); }
+})();
+renderPreview();
+
+/* 来訪カウンター：送るのは「アクセスがあった」事実のみ（入力データは一切送らない） */
+(function(){
+  const NS="senseisupportai-lab", KEY="shojo";
+  const counted = localStorage.getItem("shojo_counted")==="1";
+  fetch("https://abacus.jasoncameron.dev/"+(counted?"get":"hit")+"/"+NS+"/"+KEY)
+    .then(r=>r.json()).then(d=>{
+      if(typeof d.value==="number"){
+        const el=$("counter");
+        el.textContent="🌱 これまでに "+d.value.toLocaleString("ja-JP")+" 人の先生が使いました";
+        el.style.display="inline-block";
+        localStorage.setItem("shojo_counted","1");
+      }
+    }).catch(()=>{});
+})();
+/* Service Worker：表示の高速化＆保険として静かに登録するだけ */
+if("serviceWorker" in navigator){ window.addEventListener("load",()=>navigator.serviceWorker.register("sw.js").catch(()=>{})); }
+</script>
+</body>
+</html>
