@@ -85,6 +85,20 @@
   .tray{ height:14px; margin:0 -2px; border-radius:0 0 12px 12px;
     background:linear-gradient(var(--wood),var(--wood2)); box-shadow:inset 0 2px 4px rgba(0,0,0,.25); }
 
+  /* ── クラス名簿（道具の土台・別枠） ── */
+  .setup{ display:flex; align-items:center; gap:14px; flex-wrap:wrap;
+    background:#fbfdf8; border:1.6px solid #cfe3b8; border-left:6px solid #7fb35a; border-radius:14px;
+    padding:14px 18px; margin-top:18px; box-shadow:0 4px 12px rgba(90,138,60,.10); }
+  .setup-ic{ font-size:32px; line-height:1; flex:0 0 auto; }
+  .setup-tx{ flex:1; min-width:210px; }
+  .setup-tx .st-h{ color:#3f6b27; font-size:16px; font-weight:bold; display:flex; align-items:center; gap:8px; }
+  .setup-tx .st-badge{ background:#7fb35a; color:#fff; border-radius:20px; padding:1px 9px; font-size:10.5px; font-weight:bold; }
+  .setup-tx .st-p{ color:#6c8a52; font-size:12.5px; margin-top:3px; line-height:1.7; }
+  .setup-btn{ flex:0 0 auto; background:#7fb35a; color:#fff; text-decoration:none; font-weight:bold; font-size:14.5px;
+    border-radius:26px; padding:11px 22px; box-shadow:0 3px 0 #5a8a3c; white-space:nowrap; transition:transform .05s; }
+  .setup-btn:active{ transform:translateY(2px); box-shadow:0 1px 0 #5a8a3c; }
+  @media (max-width:520px){ .setup{ padding:13px 15px; } .setup-btn{ width:100%; text-align:center; } }
+
   .safe{ background:#eef6e4; border:1px solid #cfe3b8; border-radius:12px; padding:11px 14px; margin-top:22px;
     font-size:12.5px; color:#3f6b27; line-height:1.85; text-align:center; }
   .about{ max-width:600px; margin:18px auto 0; text-align:left; background:#fbfdf8; border:1px solid #e6edda;
@@ -112,12 +126,6 @@
     <div class="todaylabel">きょうの道具</div>
 
     <div class="tools">
-      <a class="card" href="meibo.html">
-        <div class="top"><span class="emoji">📋</span><h2>クラス名簿</h2><span class="badge">NEW</span></div>
-        <p>名前を一度だけ入れておけば、席替えや係・当番ぎめでワンタップ呼び出し。もう毎回打ち直さなくてOK。名前は端末の外に出ません。</p>
-        <span class="open">ひらく →</span>
-      </a>
-
       <a class="card" href="sekigae.html">
         <div class="top"><span class="emoji">🪑</span><h2>席替えツール</h2></div>
         <p>名前を入れてボタンを押すだけ。離したい子・前にしたい子などの配慮もまるごとおまかせ。子どもの情報は端末の外に出ません。</p>
@@ -144,6 +152,15 @@
     </div>
   </div>
   <div class="tray"></div>
+
+  <div class="setup">
+    <div class="setup-ic">📋</div>
+    <div class="setup-tx">
+      <div class="st-h">クラス名簿 <span class="st-badge">NEW</span></div>
+      <div class="st-p">名前を一度だけ登録しておけば、席替え・係/当番など<b>どの道具からでもワンタップで呼び出し</b>。もう毎回打ち直さなくてOK。名前はこの端末の外に出ません。</div>
+    </div>
+    <a class="setup-btn" href="meibo.html">名簿をひらく →</a>
+  </div>
 
   <div class="safe">🔒 どのツールも、入力した内容はこの端末の中だけ。私たちのサーバーには送信されません。</div>
 
