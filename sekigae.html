@@ -97,7 +97,7 @@
 </head>
 <body>
 <div class="wrap">
-  <a href="./" style="display:inline-block;margin:0 0 8px;color:#5a8a3c;font-size:13px;font-weight:bold;text-decoration:none;">← 勝手ツール一覧</a>
+  <a href="https://senseisupportai-lab.github.io/sensei-tools/" style="display:inline-block;margin:0 0 8px;color:#5a8a3c;font-size:13px;font-weight:bold;text-decoration:none;">← 勝手ツール一覧</a>
   <div class="hero">
     <img class="heroimg" src="hero.png" alt="">
     <h1>🪑 席替えツール</h1>
@@ -212,6 +212,11 @@
     <input type="file" id="importFile" accept="application/json,.json" style="display:none;">
   </div>
   <div class="hint" style="text-align:center; margin-top:5px;">入力は自動でこの端末に残ります。「控える」はバックアップ用（年度末・買い替え時の引き継ぎに）。</div>
+
+  <div style="text-align:center; margin-top:20px;">
+    <button class="go ghost" id="saveTool" style="font-size:13px;">💾 このツールを保存（オフラインでも使える）</button>
+    <div class="hint" style="margin-top:5px;">保存したHTMLファイルは、LINEやメールでそのまま渡せます。ネットがなくても、ダブルクリックで開いて使えます。</div>
+  </div>
 
   <div class="footer">
     <div class="about">
@@ -579,6 +584,24 @@ else {
     }).catch(()=>{});
 })();
 if("serviceWorker" in navigator){ window.addEventListener("load",()=>navigator.serviceWorker.register("sw.js").catch(()=>{})); }
+
+/* ---- このツールを単体HTMLとして保存（オフライン配布用・ロゴ画像も埋め込む） ---- */
+async function saveTool(filename, inlineAssets){
+  const dl=(html)=>{ const a=document.createElement("a"); a.href=URL.createObjectURL(new Blob([html],{type:"text/html"}));
+    a.download=filename; a.click(); setTimeout(()=>URL.revokeObjectURL(a.href),1500); };
+  try{
+    let html=await (await fetch(location.href.split("?")[0],{cache:"no-store"})).text();
+    for(const name of (inlineAssets||[])){
+      try{
+        const blob=await (await fetch(name)).blob();
+        const data=await new Promise(r=>{ const fr=new FileReader(); fr.onload=()=>r(fr.result); fr.readAsDataURL(blob); });
+        html=html.split('"'+name+'"').join('"'+data+'"');
+      }catch(e){}
+    }
+    dl(html);
+  }catch(e){ dl("<!DOCTYPE html>\n"+document.documentElement.outerHTML); }
+}
+$("saveTool").onclick=()=>saveTool("席替えツール.html",["hero.png"]);
 </script>
 </body>
 </html>

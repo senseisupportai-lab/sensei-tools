@@ -117,7 +117,7 @@
 </head>
 <body>
 <div class="wrap">
-  <a href="./" class="noprint" style="display:inline-block;margin:0 0 8px;color:#5a8a3c;font-size:13px;font-weight:bold;text-decoration:none;">← 勝手ツール一覧</a>
+  <a href="https://senseisupportai-lab.github.io/sensei-tools/" class="noprint" style="display:inline-block;margin:0 0 8px;color:#5a8a3c;font-size:13px;font-weight:bold;text-decoration:none;">← 勝手ツール一覧</a>
   <div class="hero noprint">
     <h1>🧮 計算プリントメーカー</h1>
     <div class="tagline">学年をえらんでボタンを押すだけ。毎回ちがう問題と、答えも自動で。</div>
@@ -233,6 +233,11 @@
   </div>
 
   <div id="sheet"></div>
+
+  <div class="noprint" style="text-align:center; margin-top:20px;">
+    <button class="go ghost" id="saveTool">💾 このツールを保存（オフラインでも使える）</button>
+    <div class="hint" style="margin-top:5px;">保存したHTMLファイルは、LINEやメールでそのまま渡せます。ネットがなくても、ダブルクリックで開いて使えます。</div>
+  </div>
 
   <div class="safe noprint">🔒 すべてこの端末の中だけで作られます。入力や問題が私たちのサーバーに送られることはありません。</div>
 
@@ -449,6 +454,24 @@ $("printA").onclick=()=>printWith(true);
 ["count","layout","title","asSize","carry","mulType","divType","rem"].forEach(k=> $(k).addEventListener("change", persist) );
 $("title").addEventListener("input", persist);
 build(); // 最初の1枚をすぐ表示
+
+/* ---- このツールを単体HTMLとして保存（オフライン配布用） ---- */
+async function saveTool(filename, inlineAssets){
+  const dl=(html)=>{ const a=document.createElement("a"); a.href=URL.createObjectURL(new Blob([html],{type:"text/html"}));
+    a.download=filename; a.click(); setTimeout(()=>URL.revokeObjectURL(a.href),1500); };
+  try{
+    let html=await (await fetch(location.href.split("?")[0],{cache:"no-store"})).text();
+    for(const name of (inlineAssets||[])){
+      try{
+        const blob=await (await fetch(name)).blob();
+        const data=await new Promise(r=>{ const fr=new FileReader(); fr.onload=()=>r(fr.result); fr.readAsDataURL(blob); });
+        html=html.split('"'+name+'"').join('"'+data+'"');
+      }catch(e){}
+    }
+    dl(html);
+  }catch(e){ dl("<!DOCTYPE html>\n"+document.documentElement.outerHTML); }
+}
+$("saveTool").onclick=()=>saveTool("計算プリントメーカー.html");
 </script>
 </body>
 </html>
