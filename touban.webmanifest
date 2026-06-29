@@ -1,7 +1,7 @@
 {
-  "name": "ニッチョク。",
-  "short_name": "ニッチョク。",
-  "start_url": ".",
+  "name": "係・当番ぎめ",
+  "short_name": "係・当番",
+  "start_url": "touban.html",
   "scope": ".",
   "display": "standalone",
   "background_color": "#2E4D3E",

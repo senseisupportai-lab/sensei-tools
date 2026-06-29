@@ -1,10 +1,10 @@
-const C = "tools-v10";
+const C = "tools-v13";
 // 重要ファイル（小さい・確実に入れたい）：addAllと違い1つ失敗しても他は入る
-const CORE = ["./", "./index.html", "./sekigae.html", "./keisan.html", "./timer.html",
-  "./manifest.webmanifest", "./sekigae.webmanifest", "./keisan.webmanifest", "./timer.webmanifest",
+const CORE = ["./", "./index.html", "./sekigae.html", "./keisan.html", "./timer.html", "./touban.html",
+  "./manifest.webmanifest", "./sekigae.webmanifest", "./keisan.webmanifest", "./timer.webmanifest", "./touban.webmanifest",
   "./icon-192.png", "./icon-512.png"];
 // 大きい画像はinstallをブロックしないよう裏で後追いキャッシュ
-const EXTRA = ["./hero.png"];
+const EXTRA = ["./logo.png", "./ogp.png", "./hero.png"];
 
 self.addEventListener("install", e => {
   e.waitUntil((async () => {

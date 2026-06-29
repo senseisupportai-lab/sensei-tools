@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://senseisupportai-lab.github.io/sensei-tools/sitemap.xml
