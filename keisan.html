@@ -1,0 +1,454 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#7fb35a">
+<title>計算プリントメーカー</title>
+<style>
+  * { box-sizing: border-box; }
+  body { font-family:"Hiragino Sans","Hiragino Kaku Gothic ProN","Yu Gothic","Noto Sans JP",sans-serif;
+    margin:0; background:linear-gradient(#f7faf3,#eef4e8); color:#2f3b2a; line-height:1.6; }
+  .wrap { max-width:1000px; margin:0 auto; padding:20px 16px 60px; }
+  .sub { color:#6c8a52; font-size:13px; margin-bottom:18px; }
+  .hint { color:#8a9a7c; font-size:11px; font-weight:normal; }
+  label { display:block; font-weight:bold; color:#3f6b27; font-size:13px; margin-bottom:5px; }
+  select, input[type=text]{ padding:7px 9px; border:1.5px solid #cfe0bb; border-radius:8px; font-size:14px; background:#fff; font-family:inherit; }
+
+  .step{ background:#fff; border:1.5px solid #dde7d0; border-radius:14px; padding:14px 18px; margin-bottom:14px; box-shadow:0 3px 10px rgba(90,138,60,.06); }
+  .steptitle{ font-size:17px; font-weight:bold; color:#3f6b27; display:flex; align-items:center; margin-bottom:12px; }
+  .stepnum{ display:inline-flex; width:28px; height:28px; background:#7fb35a; color:#fff; border-radius:50%;
+            align-items:center; justify-content:center; font-weight:bold; margin-right:10px; flex:0 0 auto; }
+
+  .grades{ display:flex; flex-wrap:wrap; gap:8px; }
+  .grade{ padding:10px 4px; border:1.5px solid #cfe0bb; border-radius:12px; cursor:pointer; font-size:14px; font-weight:bold;
+          background:#fff; color:#3f6b27; text-align:center; flex:1; min-width:90px; user-select:none; line-height:1.35; }
+  .grade small{ display:block; font-weight:normal; color:#8a9a7c; font-size:10.5px; margin-top:2px; }
+  .grade.on{ background:#7fb35a; color:#fff; border-color:#7fb35a; }
+  .grade.on small{ color:#eaf5dd; }
+
+  .row{ display:flex; gap:16px; flex-wrap:wrap; align-items:flex-end; }
+  .field{ min-width:120px; }
+  .ops{ display:flex; flex-wrap:wrap; gap:8px; }
+  .op{ padding:8px 16px; border:1.5px solid #cfe0bb; border-radius:20px; cursor:pointer; font-size:15px; font-weight:bold;
+       background:#fff; color:#3f6b27; user-select:none; }
+  .op.on{ background:#7fb35a; color:#fff; border-color:#7fb35a; }
+
+  details.adv{ margin-bottom:14px; }
+  details.adv>summary{ cursor:pointer; font-weight:bold; color:#5a8a3c; padding:11px 16px; background:#eef4e6;
+                       border:1.5px dashed #9cc473; border-radius:12px; list-style:none; font-size:14px; }
+  details.adv>summary::-webkit-details-marker{ display:none; }
+  details.adv>summary::before{ content:"▶ "; font-size:11px; }
+  details.adv[open]>summary::before{ content:"▼ "; }
+  details.adv[open]>summary{ border-radius:12px 12px 0 0; }
+  .advbody{ border:1.5px solid #dde7d0; border-top:none; border-radius:0 0 12px 12px; padding:14px 18px; background:#fff; }
+  .ckbox{ display:inline-flex; align-items:center; gap:6px; margin:0 18px 8px 0; font-weight:normal; color:#2f3b2a; font-size:14px; cursor:pointer; }
+  .ckbox input{ width:16px; height:16px; }
+
+  .go { display:inline-flex; align-items:center; gap:8px; background:#7fb35a; color:#fff; border:none;
+        border-radius:30px; padding:12px 28px; font-size:17px; font-weight:bold; cursor:pointer; margin:4px 4px 0;
+        box-shadow:0 3px 0 #5a8a3c; transition:transform .05s; }
+  .go:active { transform:translateY(2px); box-shadow:0 1px 0 #5a8a3c; }
+  .ghost { background:#fff; color:#5a8a3c; border:1.5px solid #9cc473; box-shadow:none; padding:10px 20px; font-size:14px; }
+  .ghost:active{ transform:translateY(1px); box-shadow:none; }
+
+  .safe{ background:#eef6e4; border:1px solid #cfe3b8; border-radius:9px; padding:8px 11px; margin-top:10px;
+         font-size:12.5px; color:#3f6b27; line-height:1.7; }
+  .toolbar{ text-align:center; margin:8px 0 4px; }
+  .tline{ text-align:center; }
+
+  /* ===== プリント本体 ===== */
+  .sheet{ background:#fff; border:1px solid #d7e8c5; border-radius:10px; padding:26px 30px 30px; margin-top:10px;
+          box-shadow:0 3px 12px rgba(90,138,60,.10); }
+  .sheet-head{ display:flex; justify-content:space-between; align-items:flex-end; border-bottom:2.5px solid #2f3b2a; padding-bottom:8px; margin-bottom:18px; gap:12px; flex-wrap:wrap; }
+  .sheet-title{ font-size:20px; font-weight:bold; color:#1f2a1a; }
+  .sheet-title small{ font-weight:normal; font-size:12px; color:#6c8a52; margin-left:8px; }
+  .sheet-meta{ display:flex; gap:18px; font-size:13px; color:#333; }
+  .sheet-meta b{ font-weight:bold; }
+  .uline{ display:inline-block; border-bottom:1.4px solid #555; min-width:88px; height:18px; vertical-align:bottom; }
+  .uline.score{ min-width:64px; }
+
+  .plist{ display:grid; gap:14px 26px; }
+  .pitem{ display:flex; align-items:baseline; font-size:20px; color:#1f2a1a; break-inside:avoid; }
+  .pno{ color:#7a8a6b; font-size:14px; font-weight:bold; min-width:34px; flex:0 0 auto; }
+  .pbody{ font-variant-numeric:tabular-nums; letter-spacing:.5px; }
+  .blank{ display:inline-block; border-bottom:1.6px solid #2f3b2a; min-width:54px; text-align:center; margin-left:4px; }
+  .ans{ color:#c0392b; font-weight:bold; }
+  body:not(.showans) .ans{ display:none; }
+  body.showans .blank{ border-bottom:1.6px dashed #d8b0b0; }
+
+  /* たて書き（ひっ算） */
+  .vitem{ display:flex; flex-direction:column; align-items:center; break-inside:avoid; }
+  .vno{ align-self:flex-start; color:#7a8a6b; font-size:13px; font-weight:bold; margin-bottom:4px; }
+  .vcalc{ font-size:24px; font-variant-numeric:tabular-nums; line-height:1.25; text-align:right; min-width:120px; }
+  .vcalc .vtop{ letter-spacing:6px; padding-right:6px; }
+  .vcalc .vbot{ letter-spacing:6px; padding-right:6px; border-bottom:2px solid #2f3b2a; }
+  .vcalc .vop{ float:left; padding-left:4px; }
+  .vans{ letter-spacing:6px; padding-right:6px; height:30px; color:#c0392b; font-weight:bold; }
+  body:not(.showans) .vans{ visibility:hidden; }
+
+  .footer{ text-align:center; margin-top:34px; padding:16px; border-top:1px solid #e0e8d4; font-size:13px; color:#6c8a52; line-height:2; }
+  .footer a{ color:#3f6b27; font-weight:bold; text-decoration:none; }
+  .about{ max-width:560px; margin:0 auto 14px; text-align:left; background:#fbfdf8; border:1px solid #e6edda;
+          border-radius:10px; padding:11px 14px; font-size:12.5px; color:#5b6b50; line-height:1.95; }
+  .about b{ color:#3f6b27; }
+  .hero{ text-align:center; margin:4px 0 18px; }
+  .hero h1{ font-size:24px; color:#3f6b27; margin:6px 0 2px; }
+  .tagline{ font-size:13.5px; color:#5a8a3c; margin:2px 0 8px; }
+  .xtop{ margin:5px 0 0; font-size:13px; }
+  .xtop a{ color:#3f6b27; text-decoration:none; font-weight:bold; }
+
+  @media (max-width:600px){
+    .wrap{ padding:14px 10px 50px; }
+    .step{ padding:12px 13px; }
+    .sheet{ padding:18px 16px; }
+  }
+  /* ===== 印刷時 ===== */
+  @media print{
+    body{ background:#fff; }
+    .wrap{ max-width:none; padding:0; }
+    .noprint{ display:none !important; }
+    .sheet{ border:none; box-shadow:none; border-radius:0; padding:6mm 4mm; margin:0; }
+    .plist{ gap:18px 28px; }
+    .pitem{ font-size:19px; }
+    @page{ margin:12mm; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <a href="./" class="noprint" style="display:inline-block;margin:0 0 8px;color:#5a8a3c;font-size:13px;font-weight:bold;text-decoration:none;">← 勝手ツール一覧</a>
+  <div class="hero noprint">
+    <h1>🧮 計算プリントメーカー</h1>
+    <div class="tagline">学年をえらんでボタンを押すだけ。毎回ちがう問題と、答えも自動で。</div>
+    <div class="sub">宿題・朝学・小テストに。印刷してそのまま配れます。</div>
+    <div class="xtop"><a href="https://x.com/sensei_support" target="_blank" rel="noopener">𝕏 @sensei_support（つくった人：たんく）</a></div>
+  </div>
+
+  <div class="step noprint">
+    <div class="steptitle"><span class="stepnum">1</span>学年（むずかしさ）をえらぶ</div>
+    <div class="grades" id="grades"></div>
+    <div class="hint" style="margin-top:8px;">※めやすです。下の「くわしい設定」で自由に変えられます。</div>
+  </div>
+
+  <div class="step noprint">
+    <div class="steptitle"><span class="stepnum">2</span>枚のなかみ</div>
+    <div class="row">
+      <div class="field">
+        <label>プリントの名前</label>
+        <input type="text" id="title" value="けいさんプリント" style="width:180px;">
+      </div>
+      <div class="field">
+        <label>問題数</label>
+        <select id="count">
+          <option>10</option><option selected>20</option><option>24</option><option>30</option><option>40</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>書き方</label>
+        <select id="layout">
+          <option value="h">よこ書き（ □ ＝ ）</option>
+          <option value="v">たて書き（ひっ算）</option>
+        </select>
+      </div>
+    </div>
+    <div class="hint" style="margin-top:8px;">※たて書きは たし算・ひき算・かけ算 向け。わり算はよこ書きになります。</div>
+  </div>
+
+  <details class="adv noprint">
+    <summary>くわしい設定（任意）　― 計算の種類・大きさ・くり上がり ―</summary>
+    <div class="advbody">
+      <label>計算の種類 <span class="hint">（複数えらぶと「まぜた」プリントになります）</span></label>
+      <div class="ops" id="ops">
+        <div class="op" data-op="add">＋ たし算</div>
+        <div class="op" data-op="sub">－ ひき算</div>
+        <div class="op" data-op="mul">× かけ算</div>
+        <div class="op" data-op="div">÷ わり算</div>
+      </div>
+
+      <div class="row" style="margin-top:16px;">
+        <div class="field">
+          <label>たし算・ひき算の大きさ</label>
+          <select id="asSize">
+            <option value="10">10までの計算</option>
+            <option value="20">20までの計算</option>
+            <option value="100">2けた（100まで）</option>
+            <option value="1000">3けた（1000まで）</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>くり上がり・くり下がり</label>
+          <select id="carry">
+            <option value="mix">どちらもまぜる</option>
+            <option value="none">なし</option>
+            <option value="yes">あり</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="row" style="margin-top:14px;">
+        <div class="field">
+          <label>かけ算</label>
+          <select id="mulType">
+            <option value="kuku">九九（1〜9）</option>
+            <option value="2x1">2けた × 1けた</option>
+            <option value="2x2">2けた × 2けた</option>
+            <option value="3x1">3けた × 1けた</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>わり算</label>
+          <select id="divType">
+            <option value="kuku">九九の逆（あまりは下で）</option>
+            <option value="2x1">2けた ÷ 1けた</option>
+            <option value="3x1">3けた ÷ 1けた</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>わり算のあまり</label>
+          <select id="rem">
+            <option value="mix">あり・なしまぜる</option>
+            <option value="none">あまりなし（わりきれる）</option>
+            <option value="yes">あまりあり</option>
+          </select>
+        </div>
+      </div>
+    </div>
+  </details>
+
+  <div class="step noprint" style="text-align:center;">
+    <div class="steptitle" style="justify-content:center;"><span class="stepnum">3</span>つくる！</div>
+    <button class="go" id="make">🎲 プリントを作る</button>
+    <button class="go ghost" id="again">別の問題で</button>
+    <div id="msg" style="font-size:13px; color:#b9622a; margin-top:8px; min-height:18px;"></div>
+  </div>
+
+  <div class="toolbar noprint" id="toolbar" style="display:none;">
+    <label class="ckbox" style="justify-content:center;"><input type="checkbox" id="showans"> 画面で答えを見る</label>
+    <div class="tline">
+      <button class="go ghost" id="printQ">🖨 問題を印刷</button>
+      <button class="go ghost" id="printA">🖨 答えを印刷</button>
+    </div>
+    <div class="hint" style="margin-top:4px;">印刷ダイアログで「PDFに保存」を選べば、PDFとしても保存できます。</div>
+  </div>
+
+  <div id="sheet"></div>
+
+  <div class="safe noprint">🔒 すべてこの端末の中だけで作られます。入力や問題が私たちのサーバーに送られることはありません。</div>
+
+  <div class="footer noprint">
+    <div class="about">
+      <b>このツールについて</b><br>
+      「今日の宿題プリント、何にしよう…」を1秒で。毎回ちがう問題が出るので、答えを覚えてしまう心配もありません。丸つけ用の答えも自動で作ります。<br>
+      作っているのは、学び続ける先生を応援したい「たんく」です。
+    </div>
+    「こんな計算も欲しい・ここを直して」は <a href="https://line.me/R/ti/p/@171pmdrv" target="_blank" rel="noopener">公式LINE</a> へ🌱　／　<a href="https://x.com/sensei_support" target="_blank" rel="noopener">𝕏 @sensei_support</a>
+  </div>
+</div>
+
+<script>
+const $ = id => document.getElementById(id);
+const ri = (min,max) => Math.floor(Math.random()*(max-min+1))+min;
+const pick = a => a[Math.floor(Math.random()*a.length)];
+
+/* ---- 学年プリセット（めやす） ---- */
+const GRADES = [
+  {key:1, label:"1年", note:"たし・ひき", set:{ops:["add","sub"], asSize:"20", carry:"mix", mulType:"kuku", divType:"kuku", rem:"none", layout:"h"}},
+  {key:2, label:"2年", note:"九九・ひっ算", set:{ops:["add","sub","mul"], asSize:"100", carry:"yes", mulType:"kuku", divType:"kuku", rem:"none", layout:"v"}},
+  {key:3, label:"3年", note:"わり算", set:{ops:["mul","div"], asSize:"1000", carry:"mix", mulType:"2x1", divType:"kuku", rem:"mix", layout:"h"}},
+  {key:4, label:"4年", note:"大きな計算", set:{ops:["mul","div"], asSize:"1000", carry:"mix", mulType:"2x2", divType:"2x1", rem:"mix", layout:"h"}},
+  {key:5, label:"5年", note:"わり算をきわめる", set:{ops:["mul","div"], asSize:"1000", carry:"mix", mulType:"3x1", divType:"3x1", rem:"mix", layout:"h"}},
+  {key:6, label:"6年", note:"まぜて力だめし", set:{ops:["add","sub","mul","div"], asSize:"1000", carry:"mix", mulType:"2x2", divType:"3x1", rem:"mix", layout:"h"}},
+];
+let selOps = new Set(["add","sub"]);
+
+function buildGrades(){
+  const box=$("grades"); box.innerHTML="";
+  GRADES.forEach(g=>{
+    const d=document.createElement("div"); d.className="grade"; d.dataset.key=g.key;
+    d.innerHTML=`${g.label}<small>${g.note}</small>`;
+    d.onclick=()=>applyGrade(g);
+    box.appendChild(d);
+  });
+}
+function applyGrade(g){
+  document.querySelectorAll(".grade").forEach(e=>e.classList.toggle("on", +e.dataset.key===g.key));
+  selOps=new Set(g.set.ops); renderOps();
+  $("asSize").value=g.set.asSize; $("carry").value=g.set.carry;
+  $("mulType").value=g.set.mulType; $("divType").value=g.set.divType; $("rem").value=g.set.rem;
+  $("layout").value=g.set.layout;
+  persist();
+}
+function renderOps(){
+  document.querySelectorAll(".op").forEach(e=> e.classList.toggle("on", selOps.has(e.dataset.op)) );
+}
+document.querySelectorAll(".op").forEach(e=>{
+  e.onclick=()=>{ const o=e.dataset.op; if(selOps.has(o)){ if(selOps.size>1) selOps.delete(o); } else selOps.add(o); renderOps(); persist(); };
+});
+
+/* ---- くり上がり/くり下がり 判定 ---- */
+function hasCarryAdd(a,b){ let c=0; while(a>0||b>0){ const s=(a%10)+(b%10)+c; if(s>=10){c=1;} else c=0; a=(a/10|0); b=(b/10|0);} return c===1 || false; }
+// ※繰り上がりが「途中で」起きたかも見たいので作り直し
+function carryAdd(a,b){ let c=0, occurred=false; while(a>0||b>0){ const s=(a%10)+(b%10)+c; if(s>=10){c=1; occurred=true;} else c=0; a=(a/10|0); b=(b/10|0);} return occurred; }
+function borrowSub(a,b){ let br=0, occurred=false; while(a>0||b>0){ let da=(a%10)-br; const db=b%10; if(da<db){ br=1; occurred=true; } else br=0; a=(a/10|0); b=(b/10|0);} return occurred; }
+
+function sizeRange(s){
+  if(s==="10")   return [1,9];
+  if(s==="20")   return [2,18];
+  if(s==="100")  return [11,99];
+  return [101,999]; // 1000
+}
+
+/* ---- 1問つくる ---- */
+function genOne(cfg){
+  const op = cfg.ops.length===1 ? cfg.ops[0] : pick(cfg.ops);
+  for(let t=0;t<300;t++){
+    if(op==="add"){
+      const [lo,hi]=sizeRange(cfg.asSize);
+      const a=ri(lo,hi), b=ri(lo,hi);
+      if(cfg.carry==="none" && carryAdd(a,b)) continue;
+      if(cfg.carry==="yes"  && !carryAdd(a,b)) continue;
+      return {op, a, b, ans:a+b, sign:"＋"};
+    }
+    if(op==="sub"){
+      const [lo,hi]=sizeRange(cfg.asSize);
+      const a=ri(lo,hi), b=ri(lo,a);
+      if(cfg.carry==="none" && borrowSub(a,b)) continue;
+      if(cfg.carry==="yes"  && !borrowSub(a,b)) continue;
+      return {op, a, b, ans:a-b, sign:"－"};
+    }
+    if(op==="mul"){
+      let a,b;
+      if(cfg.mulType==="kuku"){ a=ri(1,9); b=ri(1,9); }
+      else if(cfg.mulType==="2x1"){ a=ri(11,99); b=ri(2,9); }
+      else if(cfg.mulType==="2x2"){ a=ri(11,99); b=ri(11,99); }
+      else { a=ri(100,999); b=ri(2,9); }
+      return {op, a, b, ans:a*b, sign:"×"};
+    }
+    if(op==="div"){
+      const b=ri(2,9);
+      let q;
+      if(cfg.divType==="kuku") q=ri(1,9);
+      else if(cfg.divType==="2x1") q=ri(10,99);
+      else q=ri(100,999);
+      let r=0;
+      if(cfg.rem==="yes") r=ri(1,b-1);
+      else if(cfg.rem==="mix") r=ri(0,b-1);
+      const a=b*q+r;
+      return {op, a, b, q, r, sign:"÷"};
+    }
+  }
+  // フォールバック
+  return {op:"add", a:1, b:1, ans:2, sign:"＋"};
+}
+
+/* ---- 描画 ---- */
+function ansText(p){
+  if(p.op==="div") return p.r>0 ? `${p.q} あまり ${p.r}` : `${p.q}`;
+  return String(p.ans);
+}
+function renderHorizontal(list){
+  const grid=document.createElement("div"); grid.className="plist";
+  grid.style.gridTemplateColumns="repeat(2,1fr)";
+  list.forEach((p,i)=>{
+    const it=document.createElement("div"); it.className="pitem";
+    const blank = p.op==="div"
+      ? `<span class="blank" style="min-width:96px;"></span><span class="ans">${ansText(p)}</span>`
+      : `<span class="blank"></span><span class="ans">${ansText(p)}</span>`;
+    it.innerHTML=`<span class="pno">(${i+1})</span><span class="pbody">${p.a} ${p.sign} ${p.b} ＝ ${blank}</span>`;
+    grid.appendChild(it);
+  });
+  return grid;
+}
+function renderVertical(list){
+  const grid=document.createElement("div"); grid.className="plist";
+  grid.style.gridTemplateColumns="repeat(4,1fr)";
+  list.forEach((p,i)=>{
+    const it=document.createElement("div"); it.className="vitem";
+    if(p.op==="div"){
+      // わり算はよこ書きで
+      it.classList.remove("vitem"); it.className="pitem";
+      it.innerHTML=`<span class="pno">(${i+1})</span><span class="pbody">${p.a} ÷ ${p.b} ＝ <span class="blank" style="min-width:96px;"></span><span class="ans">${ansText(p)}</span></span>`;
+    } else {
+      it.innerHTML=`<div class="vno">(${i+1})</div>
+        <div class="vcalc">
+          <div class="vtop">${p.a}</div>
+          <div class="vbot"><span class="vop">${p.sign}</span>${p.b}</div>
+          <div class="vans">${ansText(p)}</div>
+        </div>`;
+    }
+    grid.appendChild(it);
+  });
+  return grid;
+}
+
+function build(){
+  const cfg={
+    ops:[...selOps], asSize:$("asSize").value, carry:$("carry").value,
+    mulType:$("mulType").value, divType:$("divType").value, rem:$("rem").value
+  };
+  if(cfg.ops.length===0){ $("msg").textContent="計算の種類を1つ以上えらんでね。"; return; }
+  $("msg").textContent="";
+  const n=parseInt($("count").value)||20;
+  const layout=$("layout").value;
+  const list=[]; for(let i=0;i<n;i++) list.push(genOne(cfg));
+
+  const sheet=$("sheet"); sheet.innerHTML="";
+  const wrap=document.createElement("div"); wrap.className="sheet";
+  const today=new Date(); // 日付欄は空白（手書き）にするので未使用でもOK
+  wrap.innerHTML=`
+    <div class="sheet-head">
+      <div class="sheet-title">${escapeHtml($("title").value||"けいさんプリント")}<small>${n}問</small></div>
+      <div class="sheet-meta">
+        <span><b>名まえ</b> <span class="uline"></span></span>
+        <span><b>てん</b> <span class="uline score"></span></span>
+      </div>
+    </div>`;
+  wrap.appendChild(layout==="v" ? renderVertical(list) : renderHorizontal(list));
+  sheet.appendChild(wrap);
+  $("toolbar").style.display="block";
+  persist();
+}
+function escapeHtml(s){ return s.replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c])); }
+
+/* ---- 印刷 ---- */
+function printWith(showAns){
+  const had=document.body.classList.contains("showans");
+  document.body.classList.toggle("showans", showAns);
+  $("showans").checked=showAns;
+  window.print();
+  // 印刷後、画面表示を元に戻す
+  setTimeout(()=>{ document.body.classList.toggle("showans", had); $("showans").checked=had; },300);
+}
+
+/* ---- 保存（端末内のみ） ---- */
+const LS="keisan_v1";
+function persist(){
+  try{ localStorage.setItem(LS, JSON.stringify({
+    ops:[...selOps], asSize:$("asSize").value, carry:$("carry").value, mulType:$("mulType").value,
+    divType:$("divType").value, rem:$("rem").value, count:$("count").value, layout:$("layout").value, title:$("title").value
+  })); }catch(e){}
+}
+function restore(){
+  let s; try{ s=JSON.parse(localStorage.getItem(LS)); }catch(e){}
+  if(!s) return false;
+  if(s.ops&&s.ops.length){ selOps=new Set(s.ops); }
+  ["asSize","carry","mulType","divType","rem","count","layout","title"].forEach(k=>{ if(s[k]!=null) $(k).value=s[k]; });
+  renderOps();
+  return true;
+}
+
+/* ---- 初期化 ---- */
+buildGrades();
+if(!restore()){ applyGrade(GRADES[2]); } else renderOps();
+$("make").onclick=build;
+$("again").onclick=build;
+$("showans").addEventListener("change", e=> document.body.classList.toggle("showans", e.target.checked) );
+$("printQ").onclick=()=>printWith(false);
+$("printA").onclick=()=>printWith(true);
+["count","layout","title","asSize","carry","mulType","divType","rem"].forEach(k=> $(k).addEventListener("change", persist) );
+$("title").addEventListener("input", persist);
+build(); // 最初の1枚をすぐ表示
+</script>
+</body>
+</html>

@@ -1,6 +1,6 @@
 {
-  "name": "席替えツール",
-  "short_name": "席替え",
+  "name": "先生の勝手ツール",
+  "short_name": "勝手ツール",
   "start_url": ".",
   "scope": ".",
   "display": "standalone",
