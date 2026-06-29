@@ -1,4 +1,4 @@
-const C = "tools-v8";
+const C = "tools-v9";
 // 重要ファイル（小さい・確実に入れたい）：addAllと違い1つ失敗しても他は入る
 const CORE = ["./", "./index.html", "./sekigae.html", "./keisan.html", "./timer.html",
   "./manifest.webmanifest", "./sekigae.webmanifest", "./keisan.webmanifest", "./timer.webmanifest",

@@ -457,6 +457,9 @@ $("printA").onclick=()=>printWith(true);
 ["count","layout","title","asSize","carry","mulType","divType","rem"].forEach(k=> $(k).addEventListener("change", persist) );
 $("title").addEventListener("input", persist);
 build(); // 最初の1枚をすぐ表示
+
+/* Service Worker：表示の高速化＆保険として静かに登録するだけ（オフラインは謳わない） */
+if("serviceWorker" in navigator){ window.addEventListener("load",()=>navigator.serviceWorker.register("sw.js").catch(()=>{})); }
 </script>
 </body>
 </html>
