@@ -1,0 +1,472 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#2E4D3E">
+<link rel="manifest" href="timer.webmanifest">
+<link rel="apple-touch-icon" href="icon-192.png">
+<title>黒板タイマー｜ニッチョク。</title>
+<meta name="description" content="教室の黒板みたいなタイマー。音を消しても光で終わりが伝わる。連続タイマーで授業の流れもまるごと。">
+<style>
+  :root{ --green:#2E4D3E; --green2:#26412f; --chalk:#F5F1E8; --chalk-dim:rgba(245,241,232,.55);
+         --yellow:#F2B705; --wood:#C8945A; --red:#E8806B; --bg1:#f7faf3; --bg2:#eef4e8; --ink:#3f6b27; }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{ font-family:"Hiragino Sans","Hiragino Kaku Gothic ProN","Yu Gothic","Noto Sans JP",sans-serif;
+        background:linear-gradient(var(--bg1),var(--bg2)); color:#2f3b2a; line-height:1.6; min-height:100vh; }
+  .wrap{ max-width:1000px; margin:0 auto; padding:18px 16px 60px; }
+  .back{ display:inline-block; margin:0 0 8px; color:#5a8a3c; font-size:13px; font-weight:bold; text-decoration:none; }
+  .head{ text-align:center; margin:2px 0 16px; }
+  .head h1{ font-size:24px; color:var(--ink); margin:2px 0; }
+  .tagline{ font-size:13.5px; color:#5a8a3c; }
+  .sub{ font-size:12.5px; color:#8a9a7c; }
+  .xtop{ margin-top:5px; font-size:13px; }
+  .xtop a{ color:var(--ink); text-decoration:none; font-weight:bold; }
+
+  /* ── 黒板本体 ── */
+  .stage{ position:relative; }
+  .board{
+    position:relative; background:
+      radial-gradient(120% 90% at 26% 18%, rgba(255,255,255,.05), transparent 55%),
+      radial-gradient(140% 120% at 80% 110%, rgba(0,0,0,.22), transparent 60%),
+      var(--green);
+    border:14px solid var(--wood); border-radius:18px;
+    box-shadow:0 10px 28px rgba(0,0,0,.20), inset 0 0 70px rgba(0,0,0,.30);
+    padding:34px 26px 30px; display:flex; flex-direction:column; align-items:center; justify-content:center;
+    min-height:46vh; overflow:hidden;
+  }
+  /* チョークの粉っぽいうっすら筋 */
+  .board::after{ content:""; position:absolute; inset:0; pointer-events:none; opacity:.06;
+    background:repeating-linear-gradient(115deg, transparent 0 7px, rgba(245,241,232,.9) 7px 8px); }
+
+  .topic{ color:var(--chalk); font-size:clamp(24px,5vw,52px); font-weight:700; text-align:center;
+          margin-bottom:10px; letter-spacing:.04em; min-height:1.2em; line-height:1.25; z-index:1;
+          text-shadow:0 0 2px rgba(245,241,232,.7), .5px .5px 0 rgba(0,0,0,.15); }
+  .topic:empty{ display:none; }
+
+  .doneword{ color:var(--chalk); font-size:clamp(20px,4vw,40px); font-weight:700; letter-spacing:.12em;
+    margin-bottom:6px; z-index:1; text-shadow:0 0 12px rgba(245,241,232,.55); }
+
+  .digits{ position:relative; z-index:1; color:var(--chalk); font-weight:700;
+    font-size:clamp(74px,20vw,210px); line-height:1; letter-spacing:.02em;
+    font-variant-numeric:tabular-nums; font-feature-settings:"tnum";
+    text-shadow:0 0 2px rgba(245,241,232,.55), 1px 1px 0 rgba(0,0,0,.18), -1px 0 6px rgba(245,241,232,.10); }
+  .board.warn .digits{ color:var(--yellow); text-shadow:0 0 10px rgba(242,183,5,.35),1px 1px 0 rgba(0,0,0,.2); }
+  .board.danger .digits{ color:var(--red); text-shadow:0 0 12px rgba(232,128,107,.4),1px 1px 0 rgba(0,0,0,.2); }
+
+  /* チョークで引いた下線＝残り時間バー（消えていく） */
+  .barwrap{ width:min(78%,640px); height:16px; margin-top:26px; position:relative; z-index:1;
+    border-radius:10px; background:rgba(0,0,0,.22); box-shadow:inset 0 1px 4px rgba(0,0,0,.3); }
+  .bar{ height:100%; width:100%; border-radius:10px; background:var(--chalk);
+    box-shadow:0 0 8px rgba(245,241,232,.35); transition:background .4s; }
+  .bar.dust{ background:
+    linear-gradient(90deg, rgba(245,241,232,.92), rgba(245,241,232,.78)); }
+  .board.warn .bar{ background:var(--yellow); box-shadow:0 0 10px rgba(242,183,5,.5); }
+  .board.danger .bar{ background:var(--red); box-shadow:0 0 12px rgba(232,128,107,.6); }
+
+  /* 終了：音OFFでも“光”で伝える（ゆるやかな明滅・光過敏に配慮し低速） */
+  @keyframes flash{ 0%,100%{ background-color:var(--green);} 50%{ background-color:#5b9c6e; } }
+  .board.done{ animation:flash .9s ease-in-out infinite; }
+  .chalk-stick{ position:absolute; right:24px; bottom:18px; width:42px; height:12px; border-radius:7px;
+    background:var(--yellow); transform:rotate(-17deg); box-shadow:0 1px 4px rgba(0,0,0,.35); opacity:.9; }
+
+  /* ── 操作パネル ── */
+  .controls{ margin-top:18px; }
+  .presets{ display:flex; gap:8px; flex-wrap:wrap; justify-content:center; margin-bottom:12px; }
+  .pset,.adj{ background:#fff; border:1.5px solid #cfe0bb; color:var(--ink); border-radius:22px;
+    padding:9px 16px; font-size:15px; font-weight:bold; cursor:pointer; }
+  .pset:active,.adj:active{ transform:translateY(1px); }
+  .adj{ padding:9px 13px; }
+  .mainrow{ display:flex; gap:10px; flex-wrap:wrap; justify-content:center; align-items:center; }
+  .go{ background:#7fb35a; color:#fff; border:none; border-radius:30px; padding:14px 40px; font-size:19px;
+    font-weight:bold; cursor:pointer; box-shadow:0 3px 0 #5a8a3c; transition:transform .05s; }
+  .go:active{ transform:translateY(2px); box-shadow:0 1px 0 #5a8a3c; }
+  .ghost{ background:#fff; color:#5a8a3c; border:1.5px solid #9cc473; border-radius:30px;
+    padding:12px 22px; font-size:15px; font-weight:bold; cursor:pointer; }
+  .toggle{ display:inline-flex; align-items:center; gap:7px; background:#fff; border:1.5px solid #cfe0bb;
+    border-radius:30px; padding:11px 18px; font-size:14px; font-weight:bold; color:var(--ink); cursor:pointer; user-select:none; }
+  .toggle .dot{ width:12px; height:12px; border-radius:50%; background:#bcd0a6; }
+  .toggle.on .dot{ background:#7fb35a; }
+  .sel{ padding:11px 12px; border:1.5px solid #cfe0bb; border-radius:30px; font-size:14px; font-weight:bold;
+    color:var(--ink); background:#fff; font-family:inherit; cursor:pointer; }
+
+  /* 流れ（連続）の実行中コントロール */
+  .flowctl{ display:none; margin-top:12px; justify-content:center; gap:8px; align-items:center; flex-wrap:wrap; }
+  .flowctl .ind{ font-size:14px; font-weight:bold; color:var(--ink); background:#eef6e4;
+    border:1px solid #cfe3b8; border-radius:20px; padding:7px 14px; }
+
+  .opt{ margin-top:14px; display:flex; gap:10px; justify-content:center; align-items:center; flex-wrap:wrap; }
+  .opt input{ width:min(420px,80%); padding:9px 12px; border:1.5px solid #cfe0bb; border-radius:10px;
+    font-size:14px; font-family:inherit; }
+  .endtime{ margin-top:12px; display:flex; gap:6px; justify-content:center; align-items:center; flex-wrap:wrap;
+    font-size:14px; color:var(--ink); font-weight:bold; }
+  .endtime input{ width:62px; padding:8px; border:1.5px solid #cfe0bb; border-radius:8px; font-size:15px; text-align:center; font-family:inherit; }
+  .keyshint{ text-align:center; color:#8a9a7c; font-size:11.5px; margin-top:14px; }
+
+  /* ── 授業の流れ（連続タイマー） ── */
+  details.flow{ margin-top:16px; }
+  details.flow>summary{ cursor:pointer; font-weight:bold; color:#5a8a3c; padding:11px 16px; background:#eef4e6;
+    border:1.5px dashed #9cc473; border-radius:12px; list-style:none; font-size:14px; text-align:center; }
+  details.flow>summary::-webkit-details-marker{ display:none; }
+  details.flow>summary::before{ content:"▶ "; font-size:11px; }
+  details.flow[open]>summary::before{ content:"▼ "; }
+  details.flow[open]>summary{ border-radius:12px 12px 0 0; }
+  .flowbody{ border:1.5px solid #dde7d0; border-top:none; border-radius:0 0 12px 12px; padding:14px; background:#fff; }
+  .flowbody .desc{ font-size:12.5px; color:#7a8a6b; margin-bottom:10px; text-align:center; line-height:1.7; }
+  .steprow{ display:flex; gap:6px; align-items:center; margin-bottom:8px; flex-wrap:wrap; }
+  .steprow .num{ width:22px; height:22px; flex:0 0 auto; background:#7fb35a; color:#fff; border-radius:50%;
+    display:inline-flex; align-items:center; justify-content:center; font-size:12px; font-weight:bold; }
+  .steprow input.lbl{ flex:1; min-width:130px; padding:7px 10px; border:1.5px solid #cfe0bb; border-radius:8px; font-size:14px; font-family:inherit; }
+  .steprow input.tnum{ width:54px; padding:7px; border:1.5px solid #cfe0bb; border-radius:8px; font-size:14px; text-align:center; font-family:inherit; }
+  .steprow .u{ font-size:12px; color:#7a8a6b; }
+  .steprow .rm{ background:#fff; border:1.5px solid #e0b4b4; color:#c0392b; border-radius:8px; padding:6px 9px; font-size:12px; cursor:pointer; }
+  .flowbtns{ display:flex; gap:8px; justify-content:center; flex-wrap:wrap; margin-top:12px; }
+  .addstep{ background:#fff; border:1.5px dashed #9cc473; color:#5a8a3c; border-radius:8px; padding:8px 14px; font-size:13px; cursor:pointer; }
+
+  .footer{ text-align:center; margin-top:30px; padding:16px; border-top:1px solid #e0e8d4;
+    font-size:12.5px; color:#6c8a52; line-height:2; }
+  .footer a{ color:var(--ink); font-weight:bold; text-decoration:none; }
+
+  /* ── 全画面（投影）モード ── */
+  body.fs .wrap{ max-width:none; padding:0; }
+  body.fs .back,body.fs .head,body.fs .footer,body.fs .keyshint,body.fs .opt,body.fs details.flow{ display:none; }
+  body.fs{ background:#1a2b20; }
+  body.fs .board{ border:none; border-radius:0; min-height:100vh; justify-content:center; }
+  body.fs .controls{ position:fixed; left:50%; bottom:18px; transform:translateX(-50%);
+    background:rgba(255,255,255,.92); border-radius:18px; padding:12px 16px; box-shadow:0 6px 20px rgba(0,0,0,.3);
+    opacity:.25; transition:opacity .2s; max-width:94vw; }
+  body.fs .controls:hover{ opacity:1; }
+  /* 全画面では文字・バーを画面いっぱいに大きく */
+  body.fs .board{ padding:3vh 4vw; }
+  body.fs .topic{ font-size:min(9vw,13vh); margin-bottom:2vh; }
+  body.fs .doneword{ font-size:min(6vw,9vh); }
+  body.fs .digits{ font-size:min(27vw,46vh); }
+  body.fs .barwrap{ width:min(86%,1400px); height:clamp(20px,3.2vh,40px); margin-top:5vh; }
+
+  @media (max-width:600px){
+    .wrap{ padding:14px 10px 50px; }
+    .board{ padding:24px 14px; min-height:40vh; }
+    .go{ padding:13px 30px; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <a class="back" href="./">← 勝手ツール一覧</a>
+  <div class="head">
+    <h1>⏱️ 黒板タイマー</h1>
+    <div class="tagline">教室の黒板みたいに、子どもが自分で時間を見て動ける。</div>
+    <div class="sub">音を消しても“光”で終わりが伝わります（聴覚過敏の子にも）。インストール不要・このまま投影OK。</div>
+    <div class="xtop"><a href="https://x.com/sensei_support" target="_blank" rel="noopener">𝕏 @sensei_support（つくった人：たんく）</a></div>
+  </div>
+
+  <div class="stage">
+    <div class="board" id="board">
+      <div class="topic" id="topic"></div>
+      <div class="doneword" id="doneword" style="display:none">🔔 おわり！</div>
+      <div class="digits" id="digits">03:00</div>
+      <div class="barwrap"><div class="bar dust" id="bar"></div></div>
+      <div class="chalk-stick"></div>
+    </div>
+  </div>
+
+  <div class="controls">
+    <div class="presets" id="presets">
+      <button class="pset" data-sec="60">1分</button>
+      <button class="pset" data-sec="180">3分</button>
+      <button class="pset" data-sec="300">5分</button>
+      <button class="pset" data-sec="600">10分</button>
+      <button class="adj" data-adj="60">＋1分</button>
+      <button class="adj" data-adj="-60">－1分</button>
+      <button class="adj" data-adj="10">＋10秒</button>
+      <button class="adj" data-adj="-10">－10秒</button>
+    </div>
+    <div class="mainrow">
+      <button class="go" id="startBtn">▶ スタート</button>
+      <button class="ghost" id="resetBtn">⟲ リセット</button>
+      <button class="toggle on" id="soundBtn"><span class="dot"></span><span id="soundLbl">音 ON</span></button>
+      <select class="sel" id="soundSel" title="終了音をえらぶ（その場で試聴）">
+        <option value="soft">🔔 やさしい</option>
+        <option value="clear">🛎 はっきり</option>
+        <option value="beep">📣 ピピッ</option>
+      </select>
+      <button class="ghost" id="fsBtn">⛶ 全画面</button>
+    </div>
+    <div class="flowctl" id="flowctl">
+      <span class="ind" id="flowInd"></span>
+      <button class="adj" id="flowNextBtn">次へ ▶</button>
+      <button class="ghost" id="flowStopBtn">流れを終える</button>
+    </div>
+    <div class="opt">
+      <input id="topicInput" type="text" maxlength="40" placeholder="お題を表示（任意）：例）漢字ドリル p.24／話し合い">
+    </div>
+    <div class="endtime">
+      ⏰ 終了時刻で：<input id="endH" type="number" min="0" max="23" placeholder="10"> 時
+      <input id="endM" type="number" min="0" max="59" placeholder="45"> 分
+      <button class="adj" id="endSet">セット</button>
+    </div>
+    <div class="keyshint">キー操作：Space＝スタート／一時停止　・　R＝リセット　・　F＝全画面　・　N＝次へ（流れ）</div>
+  </div>
+
+  <details class="flow">
+    <summary>📚 授業の流れ（連続タイマー）をつくる</summary>
+    <div class="flowbody">
+      <div class="desc">活動を順番に登録して「流れでスタート」。区切りごとにチャイムが鳴り、自動で次へ進みます。<br>例）個人で考える → ペアで話す → 全体で共有</div>
+      <div id="stepsWrap"></div>
+      <button class="addstep" id="addStepBtn">＋ 段を追加</button>
+      <div class="flowbtns">
+        <button class="go" id="flowStartBtn">▶ 流れでスタート</button>
+      </div>
+    </div>
+  </details>
+
+  <div class="footer">
+    ニッチョク。の勝手ツール　—　<a href="./">ほかのツールを見る</a><br>
+    子どもの個人情報は一切あつかいません。すべて先生の手元だけで完結します。
+  </div>
+</div>
+
+<script>
+(function(){
+  const $=id=>document.getElementById(id);
+  const board=$('board'), digits=$('digits'), bar=$('bar'), doneword=$('doneword'),
+        topic=$('topic'), topicInput=$('topicInput'),
+        startBtn=$('startBtn'), resetBtn=$('resetBtn'),
+        soundBtn=$('soundBtn'), soundLbl=$('soundLbl'), soundSel=$('soundSel'), fsBtn=$('fsBtn'),
+        endH=$('endH'), endM=$('endM'), endSet=$('endSet'),
+        stepsWrap=$('stepsWrap'), addStepBtn=$('addStepBtn'),
+        flowStartBtn=$('flowStartBtn'), flowctl=$('flowctl'), flowInd=$('flowInd'),
+        flowNextBtn=$('flowNextBtn'), flowStopBtn=$('flowStopBtn');
+
+  const LS='kokuban-timer-v1';
+  let totalMs=180000, remainMs=180000, running=false, endAt=0, raf=0, firedDone=false,
+      soundOn=true, soundType='soft', flashTimer=0, advanceTimer=0,
+      mode='single', steps=[], stepIdx=0;
+
+  // ── 時間表示 ──
+  function fmt(ms){
+    const s=Math.max(0,Math.ceil(ms/1000));
+    return String(Math.floor(s/60)).padStart(2,'0')+':'+String(s%60).padStart(2,'0');
+  }
+  function currentTopicText(){
+    if(mode==='flow' && steps[stepIdx]) return `(${stepIdx+1}/${steps.length}) ${steps[stepIdx].label||'活動'}`;
+    return topicInput.value.trim();
+  }
+  function render(){
+    const over = remainMs < 0;
+    digits.textContent = over ? '＋'+fmt(-remainMs) : fmt(remainMs);
+    const ratio = totalMs>0 ? Math.min(1,Math.max(0,remainMs/totalMs)) : 0;
+    bar.style.width=(ratio*100).toFixed(2)+'%';
+    board.classList.remove('warn','danger');
+    if(over) board.classList.add('danger');
+    else if(remainMs>0){
+      const s=remainMs/1000;
+      if(s<=10) board.classList.add('danger');
+      else if(s<=Math.min(60,totalMs/1000*0.25)) board.classList.add('warn');
+    }
+    topic.textContent=currentTopicText();
+    doneword.style.display=(firedDone && remainMs<=0)?'block':'none';
+    flowctl.style.display=(mode==='flow')?'flex':'none';
+    if(mode==='flow') flowInd.textContent=`${stepIdx+1}/${steps.length}　${steps[stepIdx]?steps[stepIdx].label||'活動':''}`;
+  }
+
+  // ── カウント ──
+  function tick(){
+    remainMs=endAt-performance.now();
+    if(remainMs<=0 && !firedDone){
+      firedDone=true;
+      if(mode==='flow'){ remainMs=0; render(); flowSegmentDone(); return; }
+      finishEffects();           // シングル：チャイム＋光、以降は超過カウントへ
+    }
+    render();
+    raf=requestAnimationFrame(tick);
+  }
+  function start(){
+    if(running || remainMs===0) return;     // 0:00 ちょうどでは動かさない（リセットを促す）
+    running=true; startBtn.textContent='⏸ 一時停止';
+    if(remainMs>0){ firedDone=false; clearFlash(); }
+    endAt=performance.now()+remainMs;
+    if(soundOn) resumeAudio();
+    acquireWake();
+    raf=requestAnimationFrame(tick);
+  }
+  function pause(){
+    if(!running) return;
+    running=false; cancelAnimationFrame(raf); startBtn.textContent='▶ スタート';
+    remainMs=endAt-performance.now(); render();
+    releaseWake();
+  }
+  function toggleStart(){ running?pause():start(); }
+
+  function setTime(sec){
+    pause(); clearFlash(); clearAdvance();
+    totalMs=Math.max(0,sec)*1000; remainMs=totalMs; firedDone=false; render(); save();
+  }
+  function adjust(sec){
+    let target=Math.round(remainMs/1000)+sec; if(target<0) target=0;
+    remainMs=target*1000;
+    if(remainMs>totalMs) totalMs=remainMs;     // バーが100%を超えないように基準を伸ばす
+    if(remainMs>0){ firedDone=false; clearFlash(); }
+    if(running) endAt=performance.now()+remainMs;
+    render(); save();
+  }
+  function reset(){ pause(); clearFlash(); clearAdvance(); remainMs=totalMs; firedDone=false; render(); }
+
+  // ── 終了演出（光＋音） ──
+  function finishEffects(ms){
+    if(soundOn) chime();
+    flash(ms||6000);
+  }
+  function flash(ms){
+    board.classList.add('done');
+    clearTimeout(flashTimer);
+    flashTimer=setTimeout(()=>board.classList.remove('done'), ms);
+  }
+  function clearFlash(){ board.classList.remove('done'); if(flashTimer){clearTimeout(flashTimer);flashTimer=0;} }
+  board.addEventListener('click',()=>{ if(board.classList.contains('done')) board.classList.remove('done'); });
+
+  // ── 授業の流れ（連続） ──
+  function loadStep(i){ stepIdx=i; setTime(steps[i].sec); }
+  function startFlow(){
+    collectSteps();
+    const valid=steps.filter(s=>s.sec>0);
+    if(!valid.length){ alert('段の時間を入れてください（0秒の段は実行されません）。'); return; }
+    steps=valid; mode='flow'; clearAdvance();
+    loadStep(0); render(); start();
+  }
+  function flowSegmentDone(){
+    running=false; cancelAnimationFrame(raf); startBtn.textContent='▶ スタート';
+    if(stepIdx < steps.length-1){
+      finishEffects(2500);                         // 区切りの合図（短め）
+      advanceTimer=setTimeout(()=>{ loadStep(stepIdx+1); render(); start(); }, 2600);
+    } else {
+      finishEffects(6000);                         // 流れの最後
+      mode='single'; render();
+    }
+    releaseWake();
+  }
+  function flowNext(){
+    if(mode!=='flow') return;
+    clearAdvance();
+    if(stepIdx < steps.length-1){ loadStep(stepIdx+1); render(); start(); }
+    else { clearFlash(); finishEffects(6000); mode='single'; pause(); remainMs=0; firedDone=true; render(); }
+  }
+  function flowStop(){ clearAdvance(); mode='single'; pause(); clearFlash(); render(); }
+  function clearAdvance(){ if(advanceTimer){clearTimeout(advanceTimer);advanceTimer=0;} }
+
+  // 段の編集UI
+  function addStep(label,sec){
+    const m=Math.floor((sec||0)/60), s=(sec||0)%60;
+    const row=document.createElement('div');
+    row.className='steprow';
+    row.innerHTML=`<span class="num"></span>
+      <input class="lbl" type="text" maxlength="24" placeholder="活動の名前（例：ペアで話す）" value="${(label||'').replace(/"/g,'&quot;')}">
+      <input class="tnum min" type="number" min="0" max="99" value="${m}"><span class="u">分</span>
+      <input class="tnum sec" type="number" min="0" max="59" value="${s}"><span class="u">秒</span>
+      <button class="rm" type="button">削除</button>`;
+    row.querySelector('.rm').addEventListener('click',()=>{ row.remove(); collectSteps(); renumber(); save(); });
+    row.querySelectorAll('input').forEach(inp=>inp.addEventListener('input',()=>{ collectSteps(); save(); }));
+    stepsWrap.appendChild(row); renumber();
+  }
+  function renumber(){ [...stepsWrap.querySelectorAll('.steprow .num')].forEach((n,i)=>n.textContent=i+1); }
+  function collectSteps(){
+    steps=[...stepsWrap.querySelectorAll('.steprow')].map(r=>({
+      label:r.querySelector('.lbl').value.trim(),
+      sec:(parseInt(r.querySelector('.min').value,10)||0)*60+(parseInt(r.querySelector('.sec').value,10)||0)
+    }));
+  }
+  function renderSteps(list){ stepsWrap.innerHTML=''; list.forEach(s=>addStep(s.label,s.sec)); }
+
+  // ── 終了音（外部ファイル不要） ──
+  let actx=null;
+  function resumeAudio(){ try{ actx=actx||new (window.AudioContext||window.webkitAudioContext)(); if(actx.state==='suspended') actx.resume(); }catch(e){} }
+  function chime(){
+    try{
+      resumeAudio(); const t0=actx.currentTime;
+      const beep=(f,start,dur,vol,type)=>{
+        const o=actx.createOscillator(), g=actx.createGain();
+        o.type=type||'sine'; o.frequency.value=f; const t=t0+start;
+        g.gain.setValueAtTime(0,t); g.gain.linearRampToValueAtTime(vol,t+0.02);
+        g.gain.exponentialRampToValueAtTime(0.0001,t+dur);
+        o.connect(g).connect(actx.destination); o.start(t); o.stop(t+dur+0.05);
+      };
+      if(soundType==='clear'){ beep(784,0,0.5,0.22,'triangle'); beep(587,0.32,0.7,0.22,'triangle'); }
+      else if(soundType==='beep'){ beep(880,0,0.12,0.2,'square'); beep(880,0.18,0.12,0.2,'square'); beep(880,0.36,0.16,0.2,'square'); }
+      else { [660,880,990].forEach((f,i)=>beep(f,i*0.18,0.6,0.16,'sine')); }
+    }catch(e){}
+  }
+
+  // ── 画面スリープ防止 ──
+  let wakeLock=null;
+  async function acquireWake(){ try{ if('wakeLock' in navigator && !wakeLock){ wakeLock=await navigator.wakeLock.request('screen'); wakeLock.addEventListener('release',()=>{wakeLock=null;}); } }catch(e){} }
+  function releaseWake(){ try{ wakeLock&&wakeLock.release(); }catch(e){} wakeLock=null; }
+  document.addEventListener('visibilitychange',()=>{ if(document.visibilityState==='visible' && running) acquireWake(); });
+
+  // ── 設定の保存／復元 ──
+  function save(){ try{ localStorage.setItem(LS,JSON.stringify({
+    sec:Math.round(totalMs/1000), soundOn, soundType, topic:topicInput.value, steps
+  })); }catch(e){} }
+  function applySoundUI(){
+    soundBtn.classList.toggle('on',soundOn);
+    soundLbl.textContent=soundOn?'音 ON':'音 OFF（光で通知）';
+    soundSel.value=soundType; soundSel.disabled=!soundOn;
+  }
+
+  // ── イベント ──
+  startBtn.addEventListener('click',toggleStart);
+  resetBtn.addEventListener('click',reset);
+  $('presets').addEventListener('click',e=>{
+    const b=e.target.closest('button'); if(!b) return;
+    if(mode==='flow') flowStop();
+    if(b.dataset.sec) setTime(+b.dataset.sec);
+    else if(b.dataset.adj) adjust(+b.dataset.adj);
+  });
+  soundBtn.addEventListener('click',()=>{ soundOn=!soundOn; applySoundUI(); if(soundOn) resumeAudio(); save(); });
+  soundSel.addEventListener('change',()=>{ soundType=soundSel.value; applySoundUI(); chime(); save(); });
+  topicInput.addEventListener('input',()=>{ render(); save(); });
+  endSet.addEventListener('click',()=>{
+    const h=parseInt(endH.value,10), m=parseInt(endM.value,10);
+    if(isNaN(h)||isNaN(m)){ alert('終わりの「時」と「分」を入れてください。'); return; }
+    const now=new Date(), t=new Date(now); t.setHours(h,m,0,0);
+    if(t<=now) t.setDate(t.getDate()+1);
+    if(mode==='flow') flowStop();
+    setTime(Math.round((t-now)/1000));
+  });
+
+  addStepBtn.addEventListener('click',()=>{ addStep('',180); collectSteps(); save(); });
+  flowStartBtn.addEventListener('click',startFlow);
+  flowNextBtn.addEventListener('click',flowNext);
+  flowStopBtn.addEventListener('click',flowStop);
+
+  fsBtn.addEventListener('click',()=>{ document.fullscreenElement?document.exitFullscreen?.():document.documentElement.requestFullscreen?.(); });
+  document.addEventListener('fullscreenchange',()=>{ document.body.classList.toggle('fs',!!document.fullscreenElement); });
+
+  document.addEventListener('keydown',e=>{
+    if(e.target.tagName==='INPUT'||e.target.tagName==='SELECT') return;
+    if(e.code==='Space'){ e.preventDefault(); toggleStart(); }
+    else if(e.key==='r'||e.key==='R') reset();
+    else if(e.key==='f'||e.key==='F') fsBtn.click();
+    else if(e.key==='n'||e.key==='N') flowNext();
+  });
+
+  // ── 初期化（前回の設定を復元） ──
+  (function init(){
+    let saved=null; try{ saved=JSON.parse(localStorage.getItem(LS)); }catch(e){}
+    if(saved){
+      soundOn=saved.soundOn!==false;
+      soundType=saved.soundType||'soft';
+      if(typeof saved.topic==='string') topicInput.value=saved.topic;
+      renderSteps(Array.isArray(saved.steps)&&saved.steps.length?saved.steps
+        :[{label:'個人で考える',sec:120},{label:'ペアで話す',sec:180},{label:'全体で共有',sec:300}]);
+      applySoundUI();
+      setTime(saved.sec>0?saved.sec:180);
+    } else {
+      renderSteps([{label:'個人で考える',sec:120},{label:'ペアで話す',sec:180},{label:'全体で共有',sec:300}]);
+      applySoundUI();
+      setTime(180);
+    }
+  })();
+})();
+</script>
+</body>
+</html>
