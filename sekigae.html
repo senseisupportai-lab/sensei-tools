@@ -156,6 +156,12 @@
     <div id="countInfo" style="margin-top:6px; font-size:14px; color:#3f6b27; font-weight:bold;"></div>
     <div class="hint" style="margin-top:2px;">※はじめはサンプルが入っています。自分のクラスに置きかえてね。</div>
     <div class="safe">🔒 入力した名前や情報は、この端末の中だけに保存されます。私たちのサーバーには送信されません。</div>
+    <div style="margin-top:11px; display:flex; gap:8px; flex-wrap:wrap; align-items:center;">
+      <button type="button" class="go ghost" id="meiboLoad" style="font-size:13px; padding:8px 15px; margin:0;">📋 名簿を読み込む</button>
+      <button type="button" class="go ghost" id="meiboSave" style="font-size:13px; padding:8px 15px; margin:0;">💾 この名前を名簿に保存</button>
+      <span id="meiboMsg" style="font-size:12.5px; font-weight:bold; color:#3f6b27;"></span>
+    </div>
+    <div class="hint" style="margin-top:5px;">📋 名簿は一度ほぞんすれば、<a href="meibo.html" style="color:#5a8a3c; font-weight:bold;">他の道具</a>でも使い回せます（この端末の中だけ）。</div>
   </div>
 
   <div class="step">
@@ -572,6 +578,25 @@ $("shareX").onclick=()=>{
 $("exportBtn").onclick=exportBackup;
 $("importBtn").onclick=()=>$("importFile").click();
 $("importFile").addEventListener("change", e=>{ if(e.target.files[0]) importBackup(e.target.files[0]); e.target.value=""; });
+
+/* ===== クラス名簿（全ツール共通・この端末の中だけ） ===== */
+const MEIBO_KEY="sensei_meibo_v1";
+function loadMeibo(){ try{ const o=JSON.parse(localStorage.getItem(MEIBO_KEY)); return (o&&Array.isArray(o.names))?o:null; }catch(e){ return null; } }
+function saveMeibo(names){ try{ localStorage.setItem(MEIBO_KEY, JSON.stringify({names, updatedAt:Date.now()})); return true; }catch(e){ return false; } }
+function meiboFlash(t,warn){ const el=$("meiboMsg"); el.textContent=t; el.style.color=warn?"#b9622a":"#3f6b27"; }
+$("meiboLoad").onclick=()=>{
+  const m=loadMeibo();
+  if(!m||!m.names.length){ meiboFlash("まだ名簿がありません。名前を入れて「名簿に保存」か、名簿ページで登録してね。",true); return; }
+  $("names").value=m.names.join("\n");
+  $("names").dispatchEvent(new Event("input")); persist();
+  meiboFlash("名簿（"+m.names.length+"人）を読み込みました🌱");
+};
+$("meiboSave").onclick=()=>{
+  const names=rosterNames();
+  if(!names.length){ meiboFlash("先に名前を入れてね。",true); return; }
+  saveMeibo(names);
+  meiboFlash("名簿（"+names.length+"人）を保存しました🌱 他の道具でも使えます。");
+};
 
 const saved=(()=>{ try{ return JSON.parse(localStorage.getItem(LS_KEY)); }catch(e){ return null; } })();
 if(saved){ applyState(saved); showResultOrRun(); }
