@@ -1,0 +1,397 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#7fb35a">
+<link rel="manifest" href="hyakumasu.webmanifest">
+<link rel="apple-touch-icon" href="icon-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="百ます計算">
+<title>百ます計算メーカー｜ニッチョク。</title>
+<meta name="description" content="たし算・ひき算・かけ算の百ます計算を1秒で自動生成。毎回ちがう数字と丸つけ用の答えも。朝学・帰りの会のタイムアタックにそのまま印刷できる無料ツール。">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="ニッチョク。">
+<meta property="og:title" content="百ます計算メーカー｜ニッチョク。">
+<meta property="og:description" content="たし算・ひき算・かけ算の百ます計算を1秒で自動生成。問題も答えも自動。朝学・タイムアタックにそのまま印刷できる無料ツール。">
+<meta property="og:url" content="https://senseisupportai-lab.github.io/sensei-tools/hyakumasu.html">
+<meta property="og:image" content="https://senseisupportai-lab.github.io/sensei-tools/ogp.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:site" content="@sensei_support">
+<meta name="twitter:image" content="https://senseisupportai-lab.github.io/sensei-tools/ogp.png">
+<style>
+  * { box-sizing: border-box; }
+  body { font-family:"Hiragino Sans","Hiragino Kaku Gothic ProN","Yu Gothic","Noto Sans JP",sans-serif;
+    margin:0; background:linear-gradient(#f7faf3,#eef4e8); color:#2f3b2a; line-height:1.6; }
+  .wrap { max-width:1000px; margin:0 auto; padding:20px 16px 60px; }
+  .sub { color:#6c8a52; font-size:13px; margin-bottom:18px; }
+  .hint { color:#8a9a7c; font-size:11px; font-weight:normal; }
+  label { display:block; font-weight:bold; color:#3f6b27; font-size:13px; margin-bottom:5px; }
+  select, input[type=text]{ padding:7px 9px; border:1.5px solid #cfe0bb; border-radius:8px; font-size:14px; background:#fff; font-family:inherit; }
+
+  .step{ background:#fff; border:1.5px solid #dde7d0; border-radius:14px; padding:14px 18px; margin-bottom:14px; box-shadow:0 3px 10px rgba(90,138,60,.06); }
+  .steptitle{ font-size:17px; font-weight:bold; color:#3f6b27; display:flex; align-items:center; margin-bottom:12px; }
+  .stepnum{ display:inline-flex; width:28px; height:28px; background:#7fb35a; color:#fff; border-radius:50%;
+            align-items:center; justify-content:center; font-weight:bold; margin-right:10px; flex:0 0 auto; }
+
+  .row{ display:flex; gap:16px; flex-wrap:wrap; align-items:flex-end; }
+  .field{ min-width:120px; }
+  .ops{ display:flex; flex-wrap:wrap; gap:8px; }
+  .op{ padding:10px 18px; border:1.5px solid #cfe0bb; border-radius:20px; cursor:pointer; font-size:15px; font-weight:bold;
+       background:#fff; color:#3f6b27; user-select:none; }
+  .op.on{ background:#7fb35a; color:#fff; border-color:#7fb35a; }
+
+  .sizes{ display:flex; flex-wrap:wrap; gap:8px; }
+  .size{ padding:10px 6px; border:1.5px solid #cfe0bb; border-radius:12px; cursor:pointer; font-size:14px; font-weight:bold;
+         background:#fff; color:#3f6b27; text-align:center; flex:1; min-width:96px; user-select:none; line-height:1.35; }
+  .size small{ display:block; font-weight:normal; color:#8a9a7c; font-size:10.5px; margin-top:2px; }
+  .size.on{ background:#7fb35a; color:#fff; border-color:#7fb35a; }
+  .size.on small{ color:#eaf5dd; }
+
+  .go { display:inline-flex; align-items:center; gap:8px; background:#7fb35a; color:#fff; border:none;
+        border-radius:30px; padding:12px 28px; font-size:17px; font-weight:bold; cursor:pointer; margin:4px 4px 0;
+        box-shadow:0 3px 0 #5a8a3c; transition:transform .05s; }
+  .go:active { transform:translateY(2px); box-shadow:0 1px 0 #5a8a3c; }
+  .ghost { background:#fff; color:#5a8a3c; border:1.5px solid #9cc473; box-shadow:none; padding:10px 20px; font-size:14px; }
+  .ghost:active{ transform:translateY(1px); box-shadow:none; }
+
+  .ckbox{ display:inline-flex; align-items:center; gap:6px; margin:0 18px 8px 0; font-weight:normal; color:#2f3b2a; font-size:14px; cursor:pointer; }
+  .ckbox input{ width:16px; height:16px; }
+
+  .safe{ background:#eef6e4; border:1px solid #cfe3b8; border-radius:9px; padding:8px 11px; margin-top:10px;
+         font-size:12.5px; color:#3f6b27; line-height:1.7; }
+  .toolbar{ text-align:center; margin:8px 0 4px; }
+  .tline{ text-align:center; }
+
+  /* 印刷の向きラベル（画面のみ） */
+  .orientnote{ text-align:center; margin:14px 0 0; font-size:13px; font-weight:bold; color:#5a8a3c; }
+  .orientnote .pg{ display:inline-block; vertical-align:middle; margin-right:8px; border:1.6px solid #9cc473;
+        border-radius:3px; background:#fff; }
+  .orientnote.port .pg{ width:21px; height:28px; }
+  .orientnote.land .pg{ width:28px; height:21px; }
+
+  /* ===== プリント本体 ===== */
+  /* 画面プレビュー：A4の縦横比（210:297）を再現した紙わくの中に表示 */
+  .paper{ background:#fff; border:1px solid #d7e8c5; border-radius:6px; box-shadow:0 4px 16px rgba(90,138,60,.16);
+          margin:8px auto 0; overflow:hidden; }
+  body.vport .paper{ width:min(640px,92vw); aspect-ratio:210/297; }
+  body.vland .paper{ width:min(940px,96vw); aspect-ratio:297/210; }
+  .sheet{ width:100%; height:100%; padding:6.5% 7%; }
+  .sheet-head{ display:flex; justify-content:space-between; align-items:flex-end; border-bottom:2.5px solid #2f3b2a; padding-bottom:8px; margin-bottom:18px; gap:12px; flex-wrap:wrap; }
+  .sheet-title{ font-size:20px; font-weight:bold; color:#1f2a1a; }
+  .sheet-title small{ font-weight:normal; font-size:12px; color:#6c8a52; margin-left:8px; }
+  .sheet-meta{ display:flex; gap:18px; font-size:13px; color:#333; }
+  .sheet-meta b{ font-weight:bold; }
+  .uline{ display:inline-block; border-bottom:1.4px solid #555; min-width:200px; height:18px; vertical-align:bottom; }
+  .uline.time{ min-width:64px; }
+
+  /* ===== 百ますグリッド ===== */
+  .masuwrap{ display:flex; justify-content:center; }
+  table.masu{ border-collapse:collapse; }
+  table.masu td, table.masu th{ border:1.4px solid #2f3b2a; width:44px; height:44px; padding:0; text-align:center;
+    font-size:20px; font-variant-numeric:tabular-nums; color:#1f2a1a; }
+  table.masu .corner{ background:#2f3b2a; color:#fff; font-size:23px; font-weight:bold; }
+  table.masu .hd{ background:#eef4e6; font-weight:bold; }
+  table.masu .cell .ans{ color:#c0392b; font-weight:bold; }
+  body:not(.showans) table.masu .cell .ans{ visibility:hidden; }
+
+  .footer{ text-align:center; margin-top:34px; padding:16px; border-top:1px solid #e0e8d4; font-size:13px; color:#6c8a52; line-height:2; }
+  .footer a{ color:#3f6b27; font-weight:bold; text-decoration:none; }
+  .about{ max-width:560px; margin:0 auto 14px; text-align:left; background:#fbfdf8; border:1px solid #e6edda;
+          border-radius:10px; padding:11px 14px; font-size:12.5px; color:#5b6b50; line-height:1.95; }
+  .about b{ color:#3f6b27; }
+  .hero{ text-align:center; margin:4px 0 18px; }
+  .hero h1{ font-size:24px; color:#3f6b27; margin:6px 0 2px; }
+  .tagline{ font-size:13.5px; color:#5a8a3c; margin:2px 0 8px; }
+  .xtop{ margin:5px 0 0; font-size:13px; }
+  .xtop a{ color:#3f6b27; text-decoration:none; font-weight:bold; }
+  .counter{ display:inline-block; margin:10px auto 0; font-size:13px; color:#3f6b27; background:#eef6e4;
+            border:1px solid #cfe3b8; border-radius:20px; padding:5px 14px; }
+
+  @media (max-width:600px){
+    .wrap{ padding:14px 10px 50px; }
+    .step{ padding:12px 13px; }
+    table.masu td, table.masu th{ width:26px; height:26px; font-size:14px; }
+    table.masu .corner{ font-size:15px; }
+  }
+  /* ===== 印刷時：紙わくは解除し、用紙そのものに合わせる ===== */
+  @media print{
+    body{ background:#fff; }
+    .wrap{ max-width:none; padding:0; }
+    .noprint{ display:none !important; }
+    .paper{ width:auto !important; aspect-ratio:auto !important; box-shadow:none; border:none; border-radius:0;
+            overflow:visible; margin:0; }
+    .sheet{ width:auto !important; height:auto !important; padding:6mm 4mm; }
+    @page{ margin:14mm; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <a href="https://senseisupportai-lab.github.io/sensei-tools/" class="noprint" style="display:inline-block;margin:0 0 8px;color:#5a8a3c;font-size:13px;font-weight:bold;text-decoration:none;">← 勝手ツール一覧</a>
+  <div class="hero noprint">
+    <h1>💯 百ます計算メーカー</h1>
+    <div class="tagline">計算をえらんでボタンを押すだけ。毎回ちがう数字と、答えも自動で。</div>
+    <div class="sub">朝学・帰りの会のタイムアタックに。印刷してそのまま配れます。</div>
+    <div class="xtop"><a href="https://x.com/sensei_support" target="_blank" rel="noopener">𝕏 @sensei_support（つくった人：たんく）</a></div>
+    <div id="counter" class="counter" style="display:none;"></div>
+  </div>
+
+  <div class="step noprint">
+    <div class="steptitle"><span class="stepnum">1</span>計算の種類をえらぶ</div>
+    <div class="ops" id="ops">
+      <div class="op" data-op="add">＋ たし算</div>
+      <div class="op" data-op="sub">－ ひき算</div>
+      <div class="op" data-op="mul">× かけ算</div>
+    </div>
+    <div class="hint" style="margin-top:8px;">※たし算は0〜9、かけ算は1〜9をならべます。ひき算は「ひかれる数」を上、「ひく数」を左にして、答えがマイナスにならないようにします。</div>
+  </div>
+
+  <div class="step noprint">
+    <div class="steptitle"><span class="stepnum">2</span>ますの数をえらぶ</div>
+    <div class="sizes" id="sizes"></div>
+  </div>
+
+  <div class="step noprint">
+    <div class="steptitle"><span class="stepnum">3</span>プリントの名前</div>
+    <div class="row">
+      <div class="field">
+        <input type="text" id="title" value="百ます計算" style="width:200px;">
+      </div>
+      <div class="field">
+        <label>用紙の向き</label>
+        <select id="orient">
+          <option value="p">たて長</option>
+          <option value="l">よこ長</option>
+        </select>
+      </div>
+      <div class="field">
+        <label class="ckbox" style="margin:0;"><input type="checkbox" id="useTime" checked> タイム記入らんをつける</label>
+      </div>
+    </div>
+  </div>
+
+  <div class="step noprint" style="text-align:center;">
+    <div class="steptitle" style="justify-content:center;"><span class="stepnum">4</span>つくる！</div>
+    <button class="go" id="make">🎲 プリントを作る</button>
+    <button class="go ghost" id="again">ちがう数で</button>
+    <div id="msg" style="font-size:13px; color:#b9622a; margin-top:8px; min-height:18px;"></div>
+  </div>
+
+  <div class="toolbar noprint" id="toolbar" style="display:none;">
+    <label class="ckbox" style="justify-content:center;"><input type="checkbox" id="showans"> 画面で答えを見る</label>
+    <div class="tline">
+      <button class="go ghost" id="printQ">🖨 問題を印刷</button>
+      <button class="go ghost" id="printA">🖨 答えを印刷</button>
+    </div>
+    <div class="hint" style="margin-top:4px;">印刷ダイアログで「PDFに保存」を選べば、PDFとしても保存できます。</div>
+  </div>
+
+  <div class="orientnote noprint" id="orientnote" style="display:none;"></div>
+  <div id="sheet"></div>
+
+  <div class="noprint" style="text-align:center; margin-top:22px;">
+    <div class="hint">📲 スマホは「共有 → ホーム画面に追加」で、次からアイコンからすぐ開けます。</div>
+  </div>
+
+  <div class="safe noprint">🔒 すべてこの端末の中だけで作られます。入力や問題が私たちのサーバーに送られることはありません。</div>
+
+  <div class="footer noprint">
+    <div class="about">
+      <b>このツールについて</b><br>
+      「今日の百ます、何にしよう…」を1秒で。たし算・ひき算・かけ算の表が、毎回ちがう数字ならびで出ます。タイムをはかって、自分のきのうと比べる朝学にどうぞ。丸つけ用の答えも自動で作ります。<br>
+      作っているのは、学び続ける先生を応援したい「たんく」です。
+    </div>
+    「こんな計算も欲しい・ここを直して」は <a href="https://x.com/sensei_support" target="_blank" rel="noopener">𝕏 @sensei_support</a> へ🌱
+  </div>
+</div>
+
+<script>
+const $ = id => document.getElementById(id);
+const ri = (min,max) => Math.floor(Math.random()*(max-min+1))+min;
+
+/* ---- 設定 ---- */
+let curOp = "add";
+let curN  = 10;
+
+const SIZES = [
+  {n:10, label:"100ます", note:"10×10"},
+  {n:9,  label:"81ます",  note:"9×9"},
+  {n:7,  label:"49ます",  note:"7×7"},
+  {n:5,  label:"25ます",  note:"5×5（はじめ向き）"},
+];
+
+/* 計算ごとの数字プール（上・左にならべる見出し） */
+function pools(op){
+  if(op==="add") return { top:[0,1,2,3,4,5,6,7,8,9], left:[0,1,2,3,4,5,6,7,8,9] }; // 0〜9
+  if(op==="sub") return { top:[9,10,11,12,13,14,15,16,17,18], left:[0,1,2,3,4,5,6,7,8,9] }; // ひかれる数 ≧ ひく数
+  return { top:[1,2,3,4,5,6,7,8,9], left:[1,2,3,4,5,6,7,8,9] }; // かけ算 1〜9
+}
+
+/* プールからN個えらぶ（できるだけ重複なし。足りなければランダムで埋める） */
+function sampleN(pool, n){
+  const src=[...pool];
+  // フィッシャー–イェーツ
+  for(let i=src.length-1;i>0;i--){ const j=ri(0,i); [src[i],src[j]]=[src[j],src[i]]; }
+  const out=src.slice(0, Math.min(n, src.length));
+  while(out.length<n) out.push(pool[ri(0,pool.length-1)]);
+  return out;
+}
+
+function answer(op,t,l){
+  if(op==="add") return t+l;
+  if(op==="sub") return t-l;
+  return t*l;
+}
+function sign(op){ return op==="add" ? "＋" : op==="sub" ? "－" : "×"; }
+
+/* ---- UI 組み立て ---- */
+function buildOps(){
+  document.querySelectorAll(".op").forEach(e=>{
+    e.onclick=()=>{ curOp=e.dataset.op; renderOps(); persist(); build(); };
+  });
+}
+function renderOps(){ document.querySelectorAll(".op").forEach(e=> e.classList.toggle("on", e.dataset.op===curOp)); }
+
+function buildSizes(){
+  const box=$("sizes"); box.innerHTML="";
+  SIZES.forEach(s=>{
+    const d=document.createElement("div"); d.className="size"; d.dataset.n=s.n;
+    d.innerHTML=`${s.label}<small>${s.note}</small>`;
+    d.onclick=()=>{ curN=s.n; renderSizes(); persist(); build(); };
+    box.appendChild(d);
+  });
+}
+function renderSizes(){ document.querySelectorAll(".size").forEach(e=> e.classList.toggle("on", +e.dataset.n===curN)); }
+
+/* ---- グリッド描画 ---- */
+function renderGrid(op, top, left){
+  const tbl=document.createElement("table"); tbl.className="masu";
+  // 見出し行
+  const thead=document.createElement("tr");
+  const corner=document.createElement("th"); corner.className="corner"; corner.textContent=sign(op);
+  thead.appendChild(corner);
+  top.forEach(t=>{ const th=document.createElement("th"); th.className="hd"; th.textContent=t; thead.appendChild(th); });
+  tbl.appendChild(thead);
+  // 各行
+  left.forEach(l=>{
+    const tr=document.createElement("tr");
+    const th=document.createElement("th"); th.className="hd"; th.textContent=l; tr.appendChild(th);
+    top.forEach(t=>{
+      const td=document.createElement("td"); td.className="cell";
+      td.innerHTML=`<span class="ans">${answer(op,t,l)}</span>`;
+      tr.appendChild(td);
+    });
+    tbl.appendChild(tr);
+  });
+  return tbl;
+}
+
+function build(){
+  $("msg").textContent="";
+  const pool=pools(curOp);
+  const top =sampleN(pool.top,  curN);
+  const left=sampleN(pool.left, curN);
+
+  const sheet=$("sheet"); sheet.innerHTML="";
+  const paper=document.createElement("div"); paper.className="paper";
+  const wrap=document.createElement("div"); wrap.className="sheet";
+  const meta = $("useTime").checked
+    ? `<span><b>なまえ</b> <span class="uline"></span></span><span><b>タイム</b> <span class="uline time"></span> 分 <span class="uline time"></span> 秒</span>`
+    : `<span><b>なまえ</b> <span class="uline"></span></span>`;
+  wrap.innerHTML=`
+    <div class="sheet-head">
+      <div class="sheet-title">${escapeHtml($("title").value||"百ます計算")}<small>${sign(curOp)} ${curN*curN}問</small></div>
+      <div class="sheet-meta">${meta}</div>
+    </div>
+    <div class="masuwrap"></div>`;
+  wrap.querySelector(".masuwrap").appendChild(renderGrid(curOp, top, left));
+  paper.appendChild(wrap);
+  sheet.appendChild(paper);
+  $("toolbar").style.display="block";
+  persist();
+}
+function escapeHtml(s){ return s.replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c])); }
+
+/* ---- 用紙の向き ---- */
+function applyOrient(){
+  const o=$("orient").value; // "p"=たて長 / "l"=よこ長
+  const land = o==="l";
+  let st=document.getElementById("pageStyle");
+  if(!st){ st=document.createElement("style"); st.id="pageStyle"; document.head.appendChild(st); }
+  st.textContent="@media print{ @page{ size:A4 "+(land?"landscape":"portrait")+"; margin:14mm; } }";
+  // 画面側のフィードバック（向きが目で分かるように）
+  document.body.classList.toggle("vland", land);
+  document.body.classList.toggle("vport", !land);
+  const note=$("orientnote");
+  if(note){
+    note.className="orientnote noprint "+(land?"land":"port");
+    note.innerHTML=`<span class="pg"></span>🖨 ${land?"よこ長":"たて長"}で印刷されます`;
+    note.style.display="block";
+  }
+}
+
+/* ---- 印刷 ---- */
+function printWith(showAns){
+  const had=document.body.classList.contains("showans");
+  document.body.classList.toggle("showans", showAns);
+  $("showans").checked=showAns;
+  window.print();
+  setTimeout(()=>{ document.body.classList.toggle("showans", had); $("showans").checked=had; },300);
+}
+
+/* ---- 保存（端末内のみ） ---- */
+const LS="hyakumasu_v1";
+function persist(){
+  try{ localStorage.setItem(LS, JSON.stringify({
+    op:curOp, n:curN, title:$("title").value, useTime:$("useTime").checked, orient:$("orient").value
+  })); }catch(e){}
+}
+function restore(){
+  let s; try{ s=JSON.parse(localStorage.getItem(LS)); }catch(e){}
+  if(!s) return false;
+  if(s.op) curOp=s.op;
+  if(s.n)  curN=s.n;
+  if(s.title!=null) $("title").value=s.title;
+  if(s.useTime!=null) $("useTime").checked=s.useTime;
+  if(s.orient!=null) $("orient").value=s.orient;
+  return true;
+}
+
+/* ---- 初期化 ---- */
+buildOps();
+buildSizes();
+restore();
+renderOps(); renderSizes(); applyOrient();
+$("make").onclick=build;
+$("again").onclick=build;
+$("showans").addEventListener("change", e=> document.body.classList.toggle("showans", e.target.checked) );
+$("printQ").onclick=()=>printWith(false);
+$("printA").onclick=()=>printWith(true);
+$("title").addEventListener("input", persist);
+$("useTime").addEventListener("change", ()=>{ persist(); build(); });
+$("orient").addEventListener("change", ()=>{ applyOrient(); persist(); });
+build(); // 最初の1枚をすぐ表示
+
+/* 来訪カウンター：送るのは「アクセスがあった」事実のみ（入力データは一切送らない） */
+(function(){
+  const NS="senseisupportai-lab", KEY="hyakumasu";
+  const counted = localStorage.getItem("hyakumasu_counted")==="1";
+  fetch("https://abacus.jasoncameron.dev/"+(counted?"get":"hit")+"/"+NS+"/"+KEY)
+    .then(r=>r.json()).then(d=>{
+      if(typeof d.value==="number"){
+        const el=$("counter");
+        el.textContent="🌱 これまでに "+d.value.toLocaleString("ja-JP")+" 人の先生が使いました";
+        el.style.display="inline-block";
+        localStorage.setItem("hyakumasu_counted","1");
+      }
+    }).catch(()=>{});
+})();
+
+/* Service Worker：表示の高速化＆保険として静かに登録するだけ */
+if("serviceWorker" in navigator){ window.addEventListener("load",()=>navigator.serviceWorker.register("sw.js").catch(()=>{})); }
+</script>
+</body>
+</html>

@@ -1,7 +1,7 @@
-const C = "tools-v15";
+const C = "tools-v16";
 // 重要ファイル（小さい・確実に入れたい）：addAllと違い1つ失敗しても他は入る
-const CORE = ["./", "./index.html", "./sekigae.html", "./keisan.html", "./timer.html", "./touban.html", "./meibo.html",
-  "./manifest.webmanifest", "./sekigae.webmanifest", "./keisan.webmanifest", "./timer.webmanifest", "./touban.webmanifest", "./meibo.webmanifest",
+const CORE = ["./", "./index.html", "./sekigae.html", "./keisan.html", "./hyakumasu.html", "./timer.html", "./touban.html", "./meibo.html",
+  "./manifest.webmanifest", "./sekigae.webmanifest", "./keisan.webmanifest", "./hyakumasu.webmanifest", "./timer.webmanifest", "./touban.webmanifest", "./meibo.webmanifest",
   "./icon-192.png", "./icon-512.png"];
 // 大きい画像はinstallをブロックしないよう裏で後追いキャッシュ
 const EXTRA = ["./logo.png", "./ogp.png", "./hero.png"];
