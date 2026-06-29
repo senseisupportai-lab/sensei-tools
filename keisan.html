@@ -4,6 +4,10 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="theme-color" content="#7fb35a">
+<link rel="manifest" href="keisan.webmanifest">
+<link rel="apple-touch-icon" href="icon-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="計算プリント">
 <title>計算プリントメーカー</title>
 <style>
   * { box-sizing: border-box; }
@@ -234,9 +238,15 @@
 
   <div id="sheet"></div>
 
-  <div class="noprint" style="text-align:center; margin-top:20px;">
-    <button class="go ghost" id="saveTool">💾 このツールを保存（オフラインでも使える）</button>
-    <div class="hint" style="margin-top:5px;">保存したHTMLファイルは、LINEやメールでそのまま渡せます。ネットがなくても、ダブルクリックで開いて使えます。</div>
+  <div class="noprint" style="margin-top:22px;">
+    <div style="max-width:560px;margin:0 auto;background:#fbfdf8;border:1.5px solid #cfe3b8;border-radius:12px;padding:13px 16px;font-size:13px;color:#3f6b27;line-height:1.85;">
+      📲 <b>ネットがなくても使えます（おすすめ）</b><br>
+      <b>スマホ</b>は「共有 → ホーム画面に追加」、<b>パソコン(Chrome)</b>はアドレスバー右の「インストール」から。次からはアイコンを押すだけ。オフラインでも開けて、<b>いつも最新版</b>です。
+    </div>
+    <div style="text-align:center;margin-top:12px;">
+      <button class="go ghost" id="saveTool" style="font-size:13px;">💾 ファイルとして保存（サイトが開けない学校PC用）</button>
+      <div class="hint" style="margin-top:5px;">保存したHTMLはLINE等でそのまま渡せます。※こちらは渡した時点の版になります（自動更新されません）。</div>
+    </div>
   </div>
 
   <div class="safe noprint">🔒 すべてこの端末の中だけで作られます。入力や問題が私たちのサーバーに送られることはありません。</div>
@@ -472,6 +482,9 @@ async function saveTool(filename, inlineAssets){
   }catch(e){ dl("<!DOCTYPE html>\n"+document.documentElement.outerHTML); }
 }
 $("saveTool").onclick=()=>saveTool("計算プリントメーカー.html");
+
+/* ---- PWA：オフライン利用＆ホーム画面に追加できるように ---- */
+if("serviceWorker" in navigator){ window.addEventListener("load",()=>navigator.serviceWorker.register("sw.js").catch(()=>{})); }
 </script>
 </body>
 </html>
