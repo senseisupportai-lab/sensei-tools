@@ -86,6 +86,8 @@
   .hero .tagline, .hero .sub{ margin-left:auto; margin-right:auto; }
   .xtop{ margin:5px 0 0; font-size:13px; }
   .xtop a{ color:#3f6b27; text-decoration:none; font-weight:bold; }
+  .counter{ display:inline-block; margin:10px auto 0; font-size:13px; color:#3f6b27; background:#eef6e4;
+            border:1px solid #cfe3b8; border-radius:20px; padding:5px 14px; }
   @media (max-width:600px){
     .wrap{ padding:14px 10px 50px; }
     .seat{ min-height:48px; font-size:14px; }
@@ -102,6 +104,7 @@
     <div class="tagline">子どもの情報を預からない。先生の手元だけで完結する席替えです。</div>
     <div class="sub">名前を入れて、ボタンを押すだけ。たて（行）は人数に合わせて自動です。</div>
     <div class="xtop"><a href="https://x.com/sensei_support" target="_blank" rel="noopener">𝕏 @sensei_support（つくった人：たんく）</a></div>
+    <div id="counter" class="counter" style="display:none;"></div>
   </div>
 
   <div class="step">
@@ -561,6 +564,20 @@ else {
   frontSelected.add("みお"); buildFrontChips();
   updateLayoutInfo(); run();
 }
+/* 来訪カウンター：送るのは「アクセスがあった」事実のみ（入力データは一切送らない）。同一端末の連打は弾く（初回だけ加算、以降は読むだけ） */
+(function(){
+  const NS="senseisupportai-lab", KEY="sekigae";
+  const counted = localStorage.getItem("sekigae_counted")==="1";
+  fetch("https://abacus.jasoncameron.dev/"+(counted?"get":"hit")+"/"+NS+"/"+KEY)
+    .then(r=>r.json()).then(d=>{
+      if(typeof d.value==="number"){
+        const el=$("counter");
+        el.textContent="🌱 これまでに "+d.value.toLocaleString("ja-JP")+" 人の先生が使いました";
+        el.style.display="inline-block";
+        localStorage.setItem("sekigae_counted","1");
+      }
+    }).catch(()=>{});
+})();
 if("serviceWorker" in navigator){ window.addEventListener("load",()=>navigator.serviceWorker.register("sw.js").catch(()=>{})); }
 </script>
 </body>
