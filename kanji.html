@@ -1,0 +1,419 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#7fb35a">
+<link rel="manifest" href="kanji.webmanifest">
+<link rel="apple-touch-icon" href="icon-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="漢字プリント">
+<title>漢字プリントメーカー｜ニッチョク。</title>
+<meta name="description" content="学年をえらぶだけで、漢字の書き取りプリントを自動生成。学年配当の漢字から毎回ちがう問題と、丸つけ用の答えも。宿題・朝学・小テストにそのまま印刷できる無料ツール。">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="ニッチョク。">
+<meta property="og:title" content="漢字プリントメーカー｜ニッチョク。">
+<meta property="og:description" content="学年をえらぶだけで漢字の書き取りプリントを自動生成。学年配当の漢字から毎回ちがう問題と答えを自動。宿題・朝学・小テストにそのまま印刷できる無料ツール。">
+<meta property="og:url" content="https://senseisupportai-lab.github.io/sensei-tools/kanji.html">
+<meta property="og:image" content="https://senseisupportai-lab.github.io/sensei-tools/ogp.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:site" content="@sensei_support">
+<meta name="twitter:image" content="https://senseisupportai-lab.github.io/sensei-tools/ogp.png">
+<style>
+  * { box-sizing: border-box; }
+  body { font-family:"Hiragino Sans","Hiragino Kaku Gothic ProN","Yu Gothic","Noto Sans JP",sans-serif;
+    margin:0; background:linear-gradient(#f7faf3,#eef4e8); color:#2f3b2a; line-height:1.6; }
+  .wrap { max-width:1000px; margin:0 auto; padding:20px 16px 60px; }
+  .sub { color:#6c8a52; font-size:13px; margin-bottom:18px; }
+  .hint { color:#8a9a7c; font-size:11px; font-weight:normal; }
+  label { display:block; font-weight:bold; color:#3f6b27; font-size:13px; margin-bottom:5px; }
+  select, input[type=text]{ padding:7px 9px; border:1.5px solid #cfe0bb; border-radius:8px; font-size:14px; background:#fff; font-family:inherit; }
+
+  .step{ background:#fff; border:1.5px solid #dde7d0; border-radius:14px; padding:14px 18px; margin-bottom:14px; box-shadow:0 3px 10px rgba(90,138,60,.06); }
+  .steptitle{ font-size:17px; font-weight:bold; color:#3f6b27; display:flex; align-items:center; margin-bottom:12px; }
+  .stepnum{ display:inline-flex; width:28px; height:28px; background:#7fb35a; color:#fff; border-radius:50%;
+            align-items:center; justify-content:center; font-weight:bold; margin-right:10px; flex:0 0 auto; }
+
+  .grades{ display:flex; flex-wrap:wrap; gap:8px; }
+  .grade{ padding:10px 4px; border:1.5px solid #cfe0bb; border-radius:12px; cursor:pointer; font-size:14px; font-weight:bold;
+          background:#fff; color:#3f6b27; text-align:center; flex:1; min-width:90px; user-select:none; line-height:1.35; }
+  .grade small{ display:block; font-weight:normal; color:#8a9a7c; font-size:10.5px; margin-top:2px; }
+  .grade.on{ background:#7fb35a; color:#fff; border-color:#7fb35a; }
+  .grade.on small{ color:#eaf5dd; }
+
+  .row{ display:flex; gap:16px; flex-wrap:wrap; align-items:flex-end; }
+  .field{ min-width:120px; }
+
+  .go { display:inline-flex; align-items:center; gap:8px; background:#7fb35a; color:#fff; border:none;
+        border-radius:30px; padding:12px 28px; font-size:17px; font-weight:bold; cursor:pointer; margin:4px 4px 0;
+        box-shadow:0 3px 0 #5a8a3c; transition:transform .05s; }
+  .go:active { transform:translateY(2px); box-shadow:0 1px 0 #5a8a3c; }
+  .ghost { background:#fff; color:#5a8a3c; border:1.5px solid #9cc473; box-shadow:none; padding:10px 20px; font-size:14px; }
+  .ghost:active{ transform:translateY(1px); box-shadow:none; }
+
+  .safe{ background:#eef6e4; border:1px solid #cfe3b8; border-radius:9px; padding:8px 11px; margin-top:10px;
+         font-size:12.5px; color:#3f6b27; line-height:1.7; }
+  .toolbar{ text-align:center; margin:8px 0 4px; }
+  .tline{ text-align:center; }
+  .ckbox{ display:inline-flex; align-items:center; gap:6px; margin:0 18px 8px 0; font-weight:normal; color:#2f3b2a; font-size:14px; cursor:pointer; }
+  .ckbox input{ width:16px; height:16px; }
+
+  /* ===== プリント本体 ===== */
+  .sheet{ background:#fff; border:1px solid #d7e8c5; border-radius:10px; padding:26px 30px 30px; margin-top:10px;
+          box-shadow:0 3px 12px rgba(90,138,60,.10); }
+  .sheet-head{ display:flex; justify-content:space-between; align-items:flex-end; border-bottom:2.5px solid #2f3b2a; padding-bottom:8px; margin-bottom:10px; gap:12px; flex-wrap:wrap; }
+  .sheet-title{ font-size:20px; font-weight:bold; color:#1f2a1a; }
+  .sheet-title small{ font-weight:normal; font-size:12px; color:#6c8a52; margin-left:8px; }
+  .sheet-meta{ display:flex; gap:18px; font-size:13px; color:#333; }
+  .sheet-meta b{ font-weight:bold; }
+  .uline{ display:inline-block; border-bottom:1.4px solid #555; min-width:88px; height:18px; vertical-align:bottom; }
+  .uline.score{ min-width:64px; }
+  .sheet-inst{ font-size:13px; color:#3f6b27; margin-bottom:16px; }
+
+  .klist{ display:grid; grid-template-columns:repeat(2,1fr); gap:18px 28px; }
+  .kitem{ display:flex; align-items:flex-end; break-inside:avoid; }
+  .kno{ color:#7a8a6b; font-size:14px; font-weight:bold; min-width:34px; flex:0 0 auto; align-self:center; }
+  .kmain{ display:inline-flex; align-items:flex-end; gap:2px; }
+  .kgroup{ display:flex; flex-direction:column; align-items:center; }
+  .kyomi{ font-size:14px; color:#1f2a1a; letter-spacing:1px; margin-bottom:4px; min-height:18px; }
+  .kboxes{ display:flex; gap:6px; }
+  .kbox{ width:46px; height:46px; border:1.6px solid #2f3b2a; border-radius:4px; position:relative;
+         display:flex; align-items:center; justify-content:center; background:#fff; flex:0 0 auto; }
+  /* マスの中央ガイド（田字格・うすく） */
+  .kbox::before, .kbox::after{ content:""; position:absolute; background:#cfe0bb; }
+  .kbox::before{ left:0; right:0; top:50%; height:1px; transform:translateY(-.5px); }
+  .kbox::after{ top:0; bottom:0; left:50%; width:1px; transform:translateX(-.5px); }
+  .kans{ position:relative; z-index:1; font-size:30px; font-weight:bold; color:#c0392b; line-height:1; }
+  .koku{ font-size:24px; color:#1f2a1a; margin-left:3px; padding-bottom:6px; }
+  body:not(.showans) .kans{ display:none; }
+
+  .footer{ text-align:center; margin-top:34px; padding:16px; border-top:1px solid #e0e8d4; font-size:13px; color:#6c8a52; line-height:2; }
+  .footer a{ color:#3f6b27; font-weight:bold; text-decoration:none; }
+  .about{ max-width:560px; margin:0 auto 14px; text-align:left; background:#fbfdf8; border:1px solid #e6edda;
+          border-radius:10px; padding:11px 14px; font-size:12.5px; color:#5b6b50; line-height:1.95; }
+  .about b{ color:#3f6b27; }
+  .hero{ text-align:center; margin:4px 0 18px; }
+  .hero h1{ font-size:24px; color:#3f6b27; margin:6px 0 2px; }
+  .tagline{ font-size:13.5px; color:#5a8a3c; margin:2px 0 8px; }
+  .xtop{ margin:5px 0 0; font-size:13px; }
+  .xtop a{ color:#3f6b27; text-decoration:none; font-weight:bold; }
+  .counter{ display:inline-block; margin:10px auto 0; font-size:13px; color:#3f6b27; background:#eef6e4;
+            border:1px solid #cfe3b8; border-radius:20px; padding:5px 14px; }
+
+  @media (max-width:600px){
+    .wrap{ padding:14px 10px 50px; }
+    .step{ padding:12px 13px; }
+    .sheet{ padding:18px 16px; }
+    .klist{ gap:14px 16px; }
+    .kbox{ width:40px; height:40px; }
+    .kans{ font-size:26px; }
+  }
+  /* ===== 印刷時 ===== */
+  @media print{
+    body{ background:#fff; }
+    .wrap{ max-width:none; padding:0; }
+    .noprint{ display:none !important; }
+    .sheet{ border:none; box-shadow:none; border-radius:0; padding:6mm 4mm; margin:0; }
+    .klist{ gap:20px 30px; }
+    @page{ margin:12mm; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <a href="https://senseisupportai-lab.github.io/sensei-tools/" class="noprint" style="display:inline-block;margin:0 0 8px;color:#5a8a3c;font-size:13px;font-weight:bold;text-decoration:none;">← ニッチョク。トップ</a>
+  <div class="hero noprint">
+    <h1>📝 漢字プリントメーカー</h1>
+    <div class="tagline">学年をえらんでボタンを押すだけ。読みを見て漢字を書く、書き取りプリント。</div>
+    <div class="sub">学年配当の漢字から出題。毎回ちがう問題と、丸つけ用の答えも自動で。</div>
+    <div class="xtop"><a href="https://x.com/sensei_support" target="_blank" rel="noopener">𝕏 @sensei_support（つくった人：たんく）</a></div>
+    <div id="counter" class="counter" style="display:none;"></div>
+  </div>
+
+  <div class="step noprint">
+    <div class="steptitle"><span class="stepnum">1</span>学年をえらぶ</div>
+    <div class="grades" id="grades"></div>
+    <div class="hint" style="margin-top:8px;">※その学年で新しく習う漢字を中心に出します（読みは、その漢字の代表的な読み）。</div>
+  </div>
+
+  <div class="step noprint">
+    <div class="steptitle"><span class="stepnum">2</span>枚のなかみ</div>
+    <div class="row">
+      <div class="field">
+        <label>プリントの名前</label>
+        <input type="text" id="title" value="漢字プリント" style="width:180px;">
+      </div>
+      <div class="field">
+        <label>問題数</label>
+        <select id="count">
+          <option>10</option><option>16</option><option selected>20</option><option>24</option><option>30</option>
+        </select>
+      </div>
+    </div>
+  </div>
+
+  <div class="step noprint" style="text-align:center;">
+    <div class="steptitle" style="justify-content:center;"><span class="stepnum">3</span>つくる！</div>
+    <button class="go" id="make">🎲 プリントを作る</button>
+    <button class="go ghost" id="again">別の問題で</button>
+    <div id="msg" style="font-size:13px; color:#b9622a; margin-top:8px; min-height:18px;"></div>
+  </div>
+
+  <div class="toolbar noprint" id="toolbar" style="display:none;">
+    <label class="ckbox" style="justify-content:center;"><input type="checkbox" id="showans"> 画面で答えを見る</label>
+    <div class="tline">
+      <button class="go ghost" id="printQ">🖨 問題を印刷</button>
+      <button class="go ghost" id="printA">🖨 答えを印刷</button>
+    </div>
+    <div class="hint" style="margin-top:4px;">印刷ダイアログで「PDFに保存」を選べば、PDFとしても保存できます。</div>
+  </div>
+
+  <div id="sheet"></div>
+
+  <div class="noprint" style="text-align:center; margin-top:22px;">
+    <div class="hint">📲 スマホは「共有 → ホーム画面に追加」で、次からアイコンからすぐ開けます。</div>
+  </div>
+
+  <div class="safe noprint">🔒 すべてこの端末の中だけで作られます。入力や問題が私たちのサーバーに送られることはありません。</div>
+
+  <div class="footer noprint">
+    <div class="about">
+      <b>このツールについて</b><br>
+      「今日の漢字、どこを出そう…」を1秒で。学年で習う漢字から毎回ちがう問題が出るので、答えを覚えてしまう心配もありません。丸つけ用の答えも自動で作ります。<br>
+      作っているのは、学び続ける先生を応援したい「たんく」です。
+    </div>
+    「こんな出し方も欲しい・ここを直して」は <a href="https://x.com/sensei_support" target="_blank" rel="noopener">𝕏 @sensei_support</a> へ🌱
+  </div>
+</div>
+
+<script>
+const $ = id => document.getElementById(id);
+
+/* ============================================================
+   学年別漢字配当表（2017年告示）にもとづく 書き取り語彙
+   各エントリ {k:書く漢字, yomi:漢字部分の読み, oku:語尾の送りがな}
+   k に使う漢字はすべて その学年以下の配当字。各語は その学年の新出字を最低1字ふくむ。
+   ============================================================ */
+const KANJI = {
+  1: [
+    {k:"花",yomi:"はな",oku:""},{k:"空",yomi:"そら",oku:""},{k:"山",yomi:"やま",oku:""},{k:"川",yomi:"かわ",oku:""},
+    {k:"田",yomi:"た",oku:""},{k:"犬",yomi:"いぬ",oku:""},{k:"虫",yomi:"むし",oku:""},{k:"草",yomi:"くさ",oku:""},
+    {k:"森",yomi:"もり",oku:""},{k:"竹",yomi:"たけ",oku:""},{k:"貝",yomi:"かい",oku:""},{k:"石",yomi:"いし",oku:""},
+    {k:"糸",yomi:"いと",oku:""},{k:"耳",yomi:"みみ",oku:""},{k:"口",yomi:"くち",oku:""},{k:"手",yomi:"て",oku:""},
+    {k:"足",yomi:"あし",oku:""},{k:"目",yomi:"め",oku:""},{k:"雨",yomi:"あめ",oku:""},{k:"金",yomi:"かね",oku:""},
+    {k:"車",yomi:"くるま",oku:""},{k:"音",yomi:"おと",oku:""},{k:"力",yomi:"ちから",oku:""},{k:"玉",yomi:"たま",oku:""},
+    {k:"王",yomi:"おう",oku:""},{k:"林",yomi:"はやし",oku:""},{k:"学校",yomi:"がっこう",oku:""},{k:"先生",yomi:"せんせい",oku:""},
+    {k:"年生",yomi:"ねんせい",oku:""},{k:"名人",yomi:"めいじん",oku:""},{k:"火山",yomi:"かざん",oku:""},{k:"水田",yomi:"すいでん",oku:""},
+    {k:"青空",yomi:"あおぞら",oku:""},{k:"森林",yomi:"しんりん",oku:""},{k:"村人",yomi:"むらびと",oku:""},{k:"町村",yomi:"ちょうそん",oku:""},
+    {k:"中",yomi:"なか",oku:""},{k:"上",yomi:"うえ",oku:""},{k:"下",yomi:"した",oku:""},{k:"右",yomi:"みぎ",oku:""},
+    {k:"左",yomi:"ひだり",oku:""},{k:"立",yomi:"た",oku:"つ"},{k:"休",yomi:"やす",oku:"む"},{k:"出",yomi:"で",oku:"る"},
+    {k:"入",yomi:"はい",oku:"る"},{k:"見",yomi:"み",oku:"る"},{k:"生",yomi:"い",oku:"きる"},{k:"上",yomi:"あ",oku:"がる"},
+    {k:"下",yomi:"さ",oku:"げる"},{k:"大",yomi:"おお",oku:"きい"},{k:"小",yomi:"ちい",oku:"さい"},{k:"正",yomi:"ただ",oku:"しい"},
+    {k:"早",yomi:"はや",oku:"い"},{k:"赤",yomi:"あか",oku:"い"},{k:"白",yomi:"しろ",oku:"い"}
+  ],
+  2: [
+    {k:"算数",yomi:"さんすう",oku:""},{k:"教室",yomi:"きょうしつ",oku:""},{k:"公園",yomi:"こうえん",oku:""},{k:"電車",yomi:"でんしゃ",oku:""},
+    {k:"図書",yomi:"としょ",oku:""},{k:"毎日",yomi:"まいにち",oku:""},{k:"朝食",yomi:"ちょうしょく",oku:""},{k:"音楽",yomi:"おんがく",oku:""},
+    {k:"理科",yomi:"りか",oku:""},{k:"会社",yomi:"かいしゃ",oku:""},{k:"電話",yomi:"でんわ",oku:""},{k:"新聞",yomi:"しんぶん",oku:""},
+    {k:"野原",yomi:"のはら",oku:""},{k:"友",yomi:"とも",oku:"だち"},{k:"地図",yomi:"ちず",oku:""},{k:"親友",yomi:"しんゆう",oku:""},
+    {k:"国語",yomi:"こくご",oku:""},{k:"道",yomi:"みち",oku:""},{k:"父",yomi:"ちち",oku:""},{k:"母",yomi:"はは",oku:""},
+    {k:"兄",yomi:"あに",oku:""},{k:"姉",yomi:"あね",oku:""},{k:"妹",yomi:"いもうと",oku:""},{k:"弟",yomi:"おとうと",oku:""},
+    {k:"教",yomi:"おし",oku:"える"},{k:"新",yomi:"あたら",oku:"しい"},{k:"歩",yomi:"ある",oku:"く"},{k:"考",yomi:"かんが",oku:"える"},
+    {k:"帰",yomi:"かえ",oku:"る"},{k:"聞",yomi:"き",oku:"く"},{k:"売",yomi:"う",oku:"る"},{k:"買",yomi:"か",oku:"う"},
+    {k:"強",yomi:"つよ",oku:"い"},{k:"弱",yomi:"よわ",oku:"い"},{k:"細",yomi:"ほそ",oku:"い"},{k:"広",yomi:"ひろ",oku:"い"},
+    {k:"古",yomi:"ふる",oku:"い"},{k:"明",yomi:"あか",oku:"るい"},{k:"鳴",yomi:"な",oku:"く"},{k:"話",yomi:"はな",oku:"す"},
+    {k:"思",yomi:"おも",oku:"う"},{k:"知",yomi:"し",oku:"る"},{k:"作",yomi:"つく",oku:"る"},{k:"走",yomi:"はし",oku:"る"},
+    {k:"会",yomi:"あ",oku:"う"},{k:"光",yomi:"ひか",oku:"る"},{k:"晴",yomi:"は",oku:"れる"},{k:"教科",yomi:"きょうか",oku:""},
+    {k:"後",yomi:"うし",oku:"ろ"},{k:"米",yomi:"こめ",oku:""},{k:"麦",yomi:"むぎ",oku:""},{k:"汽車",yomi:"きしゃ",oku:""},
+    {k:"日記",yomi:"にっき",oku:""},{k:"夜空",yomi:"よぞら",oku:""},{k:"風",yomi:"かぜ",oku:""}
+  ],
+  3: [
+    {k:"勉強",yomi:"べんきょう",oku:""},{k:"委員",yomi:"いいん",oku:""},{k:"病院",yomi:"びょういん",oku:""},{k:"写真",yomi:"しゃしん",oku:""},
+    {k:"登校",yomi:"とうこう",oku:""},{k:"地球",yomi:"ちきゅう",oku:""},{k:"練習",yomi:"れんしゅう",oku:""},{k:"宿題",yomi:"しゅくだい",oku:""},
+    {k:"安全",yomi:"あんぜん",oku:""},{k:"温度",yomi:"おんど",oku:""},{k:"世界",yomi:"せかい",oku:""},{k:"鉄道",yomi:"てつどう",oku:""},
+    {k:"中央",yomi:"ちゅうおう",oku:""},{k:"昭和",yomi:"しょうわ",oku:""},{k:"商品",yomi:"しょうひん",oku:""},{k:"農家",yomi:"のうか",oku:""},
+    {k:"美人",yomi:"びじん",oku:""},{k:"駅前",yomi:"えきまえ",oku:""},{k:"屋上",yomi:"おくじょう",oku:""},{k:"幸福",yomi:"こうふく",oku:""},
+    {k:"全部",yomi:"ぜんぶ",oku:""},{k:"区役所",yomi:"くやくしょ",oku:""},{k:"研究",yomi:"けんきゅう",oku:""},{k:"期間",yomi:"きかん",oku:""},
+    {k:"湖水",yomi:"こすい",oku:""},{k:"行進",yomi:"こうしん",oku:""},{k:"集合",yomi:"しゅうごう",oku:""},{k:"主役",yomi:"しゅやく",oku:""},
+    {k:"電柱",yomi:"でんちゅう",oku:""},{k:"植物",yomi:"しょくぶつ",oku:""},{k:"飲食",yomi:"いんしょく",oku:""},{k:"運動",yomi:"うんどう",oku:""},
+    {k:"水泳",yomi:"すいえい",oku:""},{k:"漢字",yomi:"かんじ",oku:""},{k:"気持",yomi:"きも",oku:"ち"},{k:"配",yomi:"くば",oku:"る"},
+    {k:"流",yomi:"なが",oku:"れる"},{k:"動",yomi:"うご",oku:"く"},{k:"遊",yomi:"あそ",oku:"ぶ"},{k:"送",yomi:"おく",oku:"る"},
+    {k:"整",yomi:"ととの",oku:"える"},{k:"調",yomi:"しら",oku:"べる"},{k:"育",yomi:"そだ",oku:"てる"},{k:"実",yomi:"みの",oku:"る"},
+    {k:"速",yomi:"はや",oku:"い"},{k:"短",yomi:"みじか",oku:"い"},{k:"悪",yomi:"わる",oku:"い"},{k:"暗",yomi:"くら",oku:"い"},
+    {k:"寒",yomi:"さむ",oku:"い"},{k:"苦",yomi:"くる",oku:"しい"},{k:"美",yomi:"うつく",oku:"しい"},{k:"悲",yomi:"かな",oku:"しい"},
+    {k:"幸",yomi:"しあわ",oku:"せ"},{k:"始",yomi:"はじ",oku:"まる"},{k:"返",yomi:"かえ",oku:"す"}
+  ],
+  4: [
+    {k:"英語",yomi:"えいご",oku:""},{k:"完成",yomi:"かんせい",oku:""},{k:"観察",yomi:"かんさつ",oku:""},{k:"季節",yomi:"きせつ",oku:""},
+    {k:"機械",yomi:"きかい",oku:""},{k:"希望",yomi:"きぼう",oku:""},{k:"給食",yomi:"きゅうしょく",oku:""},{k:"競争",yomi:"きょうそう",oku:""},
+    {k:"協力",yomi:"きょうりょく",oku:""},{k:"訓練",yomi:"くんれん",oku:""},{k:"軍隊",yomi:"ぐんたい",oku:""},{k:"健康",yomi:"けんこう",oku:""},
+    {k:"結果",yomi:"けっか",oku:""},{k:"関係",yomi:"かんけい",oku:""},{k:"気候",yomi:"きこう",oku:""},{k:"国旗",yomi:"こっき",oku:""},
+    {k:"最高",yomi:"さいこう",oku:""},{k:"材料",yomi:"ざいりょう",oku:""},{k:"産業",yomi:"さんぎょう",oku:""},{k:"司会",yomi:"しかい",oku:""},
+    {k:"試験",yomi:"しけん",oku:""},{k:"辞書",yomi:"じしょ",oku:""},{k:"児童",yomi:"じどう",oku:""},{k:"順番",yomi:"じゅんばん",oku:""},
+    {k:"成功",yomi:"せいこう",oku:""},{k:"説明",yomi:"せつめい",oku:""},{k:"選手",yomi:"せんしゅ",oku:""},{k:"倉庫",yomi:"そうこ",oku:""},
+    {k:"卒業",yomi:"そつぎょう",oku:""},{k:"体験",yomi:"たいけん",oku:""},{k:"単語",yomi:"たんご",oku:""},{k:"伝説",yomi:"でんせつ",oku:""},
+    {k:"努力",yomi:"どりょく",oku:""},{k:"特別",yomi:"とくべつ",oku:""},{k:"飛行",yomi:"ひこう",oku:""},{k:"不便",yomi:"ふべん",oku:""},
+    {k:"包帯",yomi:"ほうたい",oku:""},{k:"牧場",yomi:"ぼくじょう",oku:""},{k:"満足",yomi:"まんぞく",oku:""},{k:"約束",yomi:"やくそく",oku:""},
+    {k:"努",yomi:"つと",oku:"める"},{k:"覚",yomi:"おぼ",oku:"える"},{k:"笑",yomi:"わら",oku:"う"},{k:"焼",yomi:"や",oku:"く"},
+    {k:"冷",yomi:"ひ",oku:"える"},{k:"浅",yomi:"あさ",oku:"い"},{k:"続",yomi:"つづ",oku:"く"},{k:"包",yomi:"つつ",oku:"む"},
+    {k:"固",yomi:"かた",oku:"める"},{k:"建",yomi:"た",oku:"てる"},{k:"結",yomi:"むす",oku:"ぶ"},{k:"改",yomi:"あらた",oku:"める"},
+    {k:"必",yomi:"かなら",oku:"ず"},{k:"借",yomi:"か",oku:"りる"},{k:"求",yomi:"もと",oku:"める"}
+  ],
+  5: [
+    {k:"貿易",yomi:"ぼうえき",oku:""},{k:"政治",yomi:"せいじ",oku:""},{k:"永久",yomi:"えいきゅう",oku:""},{k:"基本",yomi:"きほん",oku:""},
+    {k:"財産",yomi:"ざいさん",oku:""},{k:"適切",yomi:"てきせつ",oku:""},{k:"勢力",yomi:"せいりょく",oku:""},{k:"習慣",yomi:"しゅうかん",oku:""},
+    {k:"状態",yomi:"じょうたい",oku:""},{k:"授業",yomi:"じゅぎょう",oku:""},{k:"経験",yomi:"けいけん",oku:""},{k:"構造",yomi:"こうぞう",oku:""},
+    {k:"技術",yomi:"ぎじゅつ",oku:""},{k:"講演",yomi:"こうえん",oku:""},{k:"効果",yomi:"こうか",oku:""},{k:"個人",yomi:"こじん",oku:""},
+    {k:"制限",yomi:"せいげん",oku:""},{k:"増加",yomi:"ぞうか",oku:""},{k:"損害",yomi:"そんがい",oku:""},{k:"検査",yomi:"けんさ",oku:""},
+    {k:"事故",yomi:"じこ",oku:""},{k:"防災",yomi:"ぼうさい",oku:""},{k:"武士",yomi:"ぶし",oku:""},{k:"仏像",yomi:"ぶつぞう",oku:""},
+    {k:"編集",yomi:"へんしゅう",oku:""},{k:"評価",yomi:"ひょうか",oku:""},{k:"報告",yomi:"ほうこく",oku:""},{k:"豊富",yomi:"ほうふ",oku:""},
+    {k:"夫婦",yomi:"ふうふ",oku:""},{k:"復習",yomi:"ふくしゅう",oku:""},{k:"銅像",yomi:"どうぞう",oku:""},{k:"規則",yomi:"きそく",oku:""},
+    {k:"義務",yomi:"ぎむ",oku:""},{k:"許可",yomi:"きょか",oku:""},{k:"禁止",yomi:"きんし",oku:""},{k:"救助",yomi:"きゅうじょ",oku:""},
+    {k:"領土",yomi:"りょうど",oku:""},{k:"容易",yomi:"ようい",oku:""},{k:"酸素",yomi:"さんそ",oku:""},{k:"消費",yomi:"しょうひ",oku:""},
+    {k:"確",yomi:"たし",oku:"かめる"},{k:"比",yomi:"くら",oku:"べる"},{k:"過",yomi:"す",oku:"ぎる"},{k:"営",yomi:"いとな",oku:"む"},
+    {k:"厚",yomi:"あつ",oku:"い"},{k:"防",yomi:"ふせ",oku:"ぐ"},{k:"慣",yomi:"な",oku:"れる"},{k:"絶",yomi:"た",oku:"える"},
+    {k:"燃",yomi:"も",oku:"える"},{k:"余",yomi:"あま",oku:"る"},{k:"寄",yomi:"よ",oku:"る"},{k:"招",yomi:"まね",oku:"く"},
+    {k:"似",yomi:"に",oku:"る"},{k:"築",yomi:"きず",oku:"く"},{k:"暴",yomi:"あば",oku:"れる"}
+  ],
+  6: [
+    {k:"討論",yomi:"とうろん",oku:""},{k:"憲法",yomi:"けんぽう",oku:""},{k:"頭脳",yomi:"ずのう",oku:""},{k:"尊敬",yomi:"そんけい",oku:""},
+    {k:"困難",yomi:"こんなん",oku:""},{k:"簡単",yomi:"かんたん",oku:""},{k:"私服",yomi:"しふく",oku:""},{k:"推理",yomi:"すいり",oku:""},
+    {k:"創造",yomi:"そうぞう",oku:""},{k:"批判",yomi:"ひはん",oku:""},{k:"郵便",yomi:"ゆうびん",oku:""},{k:"内臓",yomi:"ないぞう",oku:""},
+    {k:"宇宙",yomi:"うちゅう",oku:""},{k:"幼児",yomi:"ようじ",oku:""},{k:"操作",yomi:"そうさ",oku:""},{k:"敬語",yomi:"けいご",oku:""},
+    {k:"警察",yomi:"けいさつ",oku:""},{k:"劇場",yomi:"げきじょう",oku:""},{k:"激流",yomi:"げきりゅう",oku:""},{k:"絹糸",yomi:"きぬいと",oku:""},
+    {k:"権利",yomi:"けんり",oku:""},{k:"源流",yomi:"げんりゅう",oku:""},{k:"呼吸",yomi:"こきゅう",oku:""},{k:"誤解",yomi:"ごかい",oku:""},
+    {k:"孝行",yomi:"こうこう",oku:""},{k:"紅葉",yomi:"こうよう",oku:""},{k:"穀物",yomi:"こくもつ",oku:""},{k:"砂糖",yomi:"さとう",oku:""},
+    {k:"座席",yomi:"ざせき",oku:""},{k:"裁判",yomi:"さいばん",oku:""},{k:"姿勢",yomi:"しせい",oku:""},{k:"雑誌",yomi:"ざっし",oku:""},
+    {k:"磁石",yomi:"じしゃく",oku:""},{k:"樹木",yomi:"じゅもく",oku:""},{k:"宗教",yomi:"しゅうきょう",oku:""},{k:"観衆",yomi:"かんしゅう",oku:""},
+    {k:"縦横",yomi:"じゅうおう",oku:""},{k:"純真",yomi:"じゅんしん",oku:""},{k:"署名",yomi:"しょめい",oku:""},{k:"地域",yomi:"ちいき",oku:""},
+    {k:"映画",yomi:"えいが",oku:""},{k:"改革",yomi:"かいかく",oku:""},{k:"看病",yomi:"かんびょう",oku:""},{k:"故郷",yomi:"こきょう",oku:""},
+    {k:"探検",yomi:"たんけん",oku:""},{k:"探",yomi:"さが",oku:"す"},{k:"尊",yomi:"とうと",oku:"い"},{k:"暖",yomi:"あたた",oku:"かい"},
+    {k:"難",yomi:"むずか",oku:"しい"},{k:"厳",yomi:"きび",oku:"しい"},{k:"縮",yomi:"ちぢ",oku:"む"},{k:"染",yomi:"そ",oku:"める"},
+    {k:"洗",yomi:"あら",oku:"う"},{k:"補",yomi:"おぎな",oku:"う"},{k:"暮",yomi:"く",oku:"らす"}
+  ]
+};
+
+const GRADES = [
+  {key:1, note:"80字"}, {key:2, note:"160字"}, {key:3, note:"200字"},
+  {key:4, note:"202字"}, {key:5, note:"193字"}, {key:6, note:"191字"}
+];
+let curGrade = 3;
+
+function buildGrades(){
+  const box=$("grades"); box.innerHTML="";
+  GRADES.forEach(g=>{
+    const d=document.createElement("div"); d.className="grade"; d.dataset.key=g.key;
+    d.innerHTML=`${g.key}年<small>${g.note}</small>`;
+    d.onclick=()=>{ setGrade(g.key); build(); };
+    box.appendChild(d);
+  });
+  markGrade();
+}
+function markGrade(){ document.querySelectorAll(".grade").forEach(e=>e.classList.toggle("on", +e.dataset.key===curGrade)); }
+function setGrade(k){ curGrade=k; markGrade(); persist(); }
+
+/* シャッフルしてn問えらぶ（プールより多ければくり返してから足りない分を追加） */
+function pickProblems(pool, n){
+  const out=[]; let bag=[];
+  const reshuffle=()=>{ bag=pool.slice(); for(let i=bag.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [bag[i],bag[j]]=[bag[j],bag[i]]; } };
+  reshuffle();
+  for(let i=0;i<n;i++){ if(!bag.length) reshuffle(); out.push(bag.pop()); }
+  return out;
+}
+
+function renderItem(p, i){
+  const it=document.createElement("div"); it.className="kitem";
+  const boxes=[...p.k].map(ch=>`<span class="kbox"><span class="kans">${ch}</span></span>`).join("");
+  const oku = p.oku ? `<span class="koku">${p.oku}</span>` : "";
+  it.innerHTML=`<span class="kno">(${i+1})</span>
+    <span class="kmain">
+      <span class="kgroup">
+        <span class="kyomi">${p.yomi}</span>
+        <span class="kboxes">${boxes}</span>
+      </span>${oku}
+    </span>`;
+  return it;
+}
+
+function build(){
+  const pool=KANJI[curGrade];
+  const n=parseInt($("count").value)||20;
+  const list=pickProblems(pool, n);
+
+  const sheet=$("sheet"); sheet.innerHTML="";
+  const wrap=document.createElement("div"); wrap.className="sheet";
+  wrap.innerHTML=`
+    <div class="sheet-head">
+      <div class="sheet-title">${escapeHtml($("title").value||"漢字プリント")}<small>${curGrade}年・${n}問</small></div>
+      <div class="sheet-meta">
+        <span><b>名まえ</b> <span class="uline"></span></span>
+        <span><b>てん</b> <span class="uline score"></span></span>
+      </div>
+    </div>
+    <div class="sheet-inst">よみを見て、□に漢字を書きましょう。</div>`;
+  const grid=document.createElement("div"); grid.className="klist";
+  list.forEach((p,i)=>grid.appendChild(renderItem(p,i)));
+  wrap.appendChild(grid);
+  sheet.appendChild(wrap);
+  $("toolbar").style.display="block";
+  $("msg").textContent="";
+  persist();
+}
+function escapeHtml(s){ return s.replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c])); }
+
+/* ---- 印刷 ---- */
+function printWith(showAns){
+  const had=document.body.classList.contains("showans");
+  document.body.classList.toggle("showans", showAns);
+  $("showans").checked=showAns;
+  window.print();
+  setTimeout(()=>{ document.body.classList.toggle("showans", had); $("showans").checked=had; },300);
+}
+
+/* ---- 保存（端末内のみ） ---- */
+const LS="kanji_v1";
+function persist(){
+  try{ localStorage.setItem(LS, JSON.stringify({ grade:curGrade, count:$("count").value, title:$("title").value })); }catch(e){}
+}
+function restore(){
+  let s; try{ s=JSON.parse(localStorage.getItem(LS)); }catch(e){}
+  if(!s) return false;
+  if(s.grade && KANJI[s.grade]) curGrade=s.grade;
+  if(s.count!=null) $("count").value=s.count;
+  if(s.title!=null) $("title").value=s.title;
+  return true;
+}
+
+/* ---- 初期化 ---- */
+restore();
+buildGrades();
+$("make").onclick=build;
+$("again").onclick=build;
+$("showans").addEventListener("change", e=> document.body.classList.toggle("showans", e.target.checked) );
+$("printQ").onclick=()=>printWith(false);
+$("printA").onclick=()=>printWith(true);
+["count","title"].forEach(k=> $(k).addEventListener("change", persist) );
+$("title").addEventListener("input", persist);
+build(); // 最初の1枚をすぐ表示
+
+/* 来訪カウンター：送るのは「アクセスがあった」事実のみ。 */
+(function(){
+  const NS="senseisupportai-lab", KEY="kanji";
+  const counted = localStorage.getItem("kanji_counted")==="1";
+  fetch("https://abacus.jasoncameron.dev/"+(counted?"get":"hit")+"/"+NS+"/"+KEY)
+    .then(r=>r.json()).then(d=>{
+      if(typeof d.value==="number"){
+        const el=$("counter");
+        el.textContent="🌱 これまでに "+d.value.toLocaleString("ja-JP")+" 人の先生が使いました";
+        el.style.display="inline-block";
+        localStorage.setItem("kanji_counted","1");
+      }
+    }).catch(()=>{});
+})();
+
+if("serviceWorker" in navigator){ window.addEventListener("load",()=>navigator.serviceWorker.register("sw.js").catch(()=>{})); }
+</script>
+</body>
+</html>

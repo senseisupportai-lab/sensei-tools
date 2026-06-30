@@ -174,7 +174,8 @@
     body{ background:#fff; }
     .wrap{ display:none; }
     #printArea{ display:block; }
-    #printArea .cert{ width:100%; max-width:none; box-shadow:none; break-after:page; }
+    /* A4横の紙面(281×194mm)に高さも収まる幅に固定（297:210比で高さ193.8mm） */
+    #printArea .cert{ width:274mm; max-width:100%; margin:0 auto; box-shadow:none; break-after:page; }
     #printArea .cert:last-child{ break-after:auto; }
     #printArea .cardgrid{ display:grid; grid-template-columns:1fr 1fr; gap:6mm; max-width:none; width:100%; }
     #printArea .gcard{ box-shadow:none; break-inside:avoid; }
@@ -183,7 +184,7 @@
 </head>
 <body>
 <div class="wrap">
-  <a class="noprint" href="https://senseisupportai-lab.github.io/sensei-tools/" style="display:inline-block;margin:0 0 8px;color:#5a8a3c;font-size:13px;font-weight:bold;text-decoration:none;">← 勝手ツール一覧</a>
+  <a class="noprint" href="https://senseisupportai-lab.github.io/sensei-tools/" style="display:inline-block;margin:0 0 8px;color:#5a8a3c;font-size:13px;font-weight:bold;text-decoration:none;">← ニッチョク。トップ</a>
   <div class="hero noprint">
     <h1>🏆 賞状・がんばりカードメーカー</h1>
     <div class="tagline">書いて・えらんで、すぐ印刷。賞状もがんばりカードも、この端末の中だけで作れます。</div>
@@ -505,9 +506,11 @@ function printNow(){
     area.appendChild(grid);
   }
   setPageStyle(d);
-  // 印刷時の実寸で文字サイズを合わせる：一旦表示してサイズ計算
+  // 印刷時はA4実寸の幅で文字サイズを決める（96dpi換算, 1mm≒3.78px）
+  // 賞状: A4横 余白8mm → 紙面281mm ≒ 1062px ／ カード: A4縦 余白10mm・2列gap6mm → 1枚92mm ≒ 347px
+  const certW = 1035, cardW = 347;   // 賞状=274mm幅、カード=92mm幅（96dpi換算）
   area.style.display = "block";
-  sizeSheets(area);
+  sizeSheets(area, certW, cardW);
   area.style.display = "";
   window.print();
 }
