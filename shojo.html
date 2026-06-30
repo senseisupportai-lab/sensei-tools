@@ -90,13 +90,15 @@
 
   /* ── 賞状（桜＋金の装飾画像を背景に、中央へ文字を重ねる） ── */
   /* 文字サイズは JS が紙幅に比例して設定（画面＝要素幅／印刷＝A4実寸） */
-  .cert{ --pap:#fffdf5; width:100%; max-width:760px; aspect-ratio:297/210; box-shadow:0 8px 24px rgba(0,0,0,.18); }
+  .cert{ --pap:#fffdf5; width:100%; max-width:760px; aspect-ratio:297/210; box-shadow:0 8px 24px rgba(0,0,0,.18);
+    /* 賞状は明朝体で格式を出す */
+    font-family:"Hiragino Mincho ProN","Hiragino Mincho Pro","Yu Mincho",YuMincho,"Noto Serif JP","Shippori Mincho","Songti SC",serif; }
   .cert .cert-bg{ position:absolute; inset:0; width:100%; height:100%; object-fit:cover; }
   .cert .body{ position:absolute; display:flex; z-index:1; }
   /* 文字の基本色（墨＋金枠に映える濃色）。賞状は色テーマでなく1デザイン */
   .cert .c-title{ color:#352a20; font-weight:800; line-height:1.12; }
   .cert .c-name{ color:#1c241d; font-weight:800; }
-  .cert .c-body{ color:#39332b; }
+  .cert .c-body{ color:#39332b; word-break:keep-all; line-break:strict; overflow-wrap:break-word; }
   .cert .c-date, .cert .c-issuer{ color:#4a4033; }
   .cert .c-name .hon{ font-weight:700; color:#5b5142; }
   .cert .blank{ display:inline-block; border-bottom:0.06em solid #6a5d49; }

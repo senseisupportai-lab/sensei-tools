@@ -81,6 +81,19 @@
   .tab.on{ background:var(--yellow); border-color:var(--yellow); color:var(--green2); border-style:solid; }
   .catsec{ display:none; }
   .catsec.show{ display:block; }
+  /* 一覧（目次） */
+  .toc{ margin-top:12px; }
+  .tocgroup{ margin-top:16px; }
+  .tocgroup:first-child{ margin-top:8px; }
+  .toch{ color:var(--yellow); font-size:13px; font-weight:bold; letter-spacing:.04em; padding-left:6px; margin-bottom:7px; opacity:.95; }
+  .tocitem{ display:flex; align-items:center; gap:11px; text-decoration:none; color:var(--chalk);
+    padding:9px 12px; border-radius:11px; border:1.4px dashed rgba(245,241,232,.4);
+    background:rgba(245,241,232,.04); margin-bottom:7px; transition:background .1s,border-color .1s,transform .1s; }
+  .tocitem:hover{ border-color:var(--yellow); background:rgba(245,241,232,.1); transform:translateX(2px); }
+  .tocitem .em{ font-size:22px; line-height:1; flex:0 0 auto; }
+  .tocitem .tx b{ font-size:14.5px; color:var(--chalk); }
+  .tocitem .tx span{ display:block; font-size:11.5px; color:var(--chalk-dim); line-height:1.5; }
+  .tocitem .arr{ margin-left:auto; color:var(--chalk-dim); font-weight:bold; }
 
   /* ── ツール一覧（黒板の上にチョークで書いたカード） ── */
   .tools{ display:grid; grid-template-columns:repeat(auto-fill,minmax(240px,1fr)); gap:14px; margin-top:14px; }
@@ -148,12 +161,40 @@
     <div class="rule"></div>
 
     <div class="tabs">
-      <button class="tab on" type="button" data-cat="print">📄 プリント</button>
+      <button class="tab on" type="button" data-cat="all">📋 一覧</button>
+      <button class="tab" type="button" data-cat="print">📄 プリント</button>
       <button class="tab" type="button" data-cat="lesson">🔔 授業中</button>
       <button class="tab" type="button" data-cat="class">🧑‍🏫 クラスづくり</button>
     </div>
 
-    <div class="catsec show" data-cat="print">
+    <div class="catsec show" data-cat="all">
+      <div class="cat">📋 ぜんぶの道具 <span class="cnt">目次（タップでひらく）</span></div>
+      <div class="toc">
+        <div class="tocgroup">
+          <div class="toch">📄 プリントをつくる</div>
+          <a class="tocitem" href="keisan.html"><span class="em">🧮</span><span class="tx"><b>計算プリント</b><span>四則の計算プリントを自動生成（答えも）</span></span><span class="arr">→</span></a>
+          <a class="tocitem" href="hyakumasu.html"><span class="em">💯</span><span class="tx"><b>百ます計算</b><span>毎回ちがう百ますを自動生成・タイム計測に</span></span><span class="arr">→</span></a>
+          <a class="tocitem" href="kanji.html"><span class="em">📝</span><span class="tx"><b>漢字プリント</b><span>学年の漢字で書き取りを自動生成（答えも）</span></span><span class="arr">→</span></a>
+        </div>
+        <div class="tocgroup">
+          <div class="toch">🔔 授業中につかう</div>
+          <a class="tocitem" href="timer.html"><span class="em">⏱️</span><span class="tx"><b>黒板タイマー</b><span>黒板風タイマー。音OFFでも光で終了通知</span></span><span class="arr">→</span></a>
+          <a class="tocitem" href="roulette.html"><span class="em">🎯</span><span class="tx"><b>ルーレット指名</b><span>回して当てる・欠席除外・複数人指名</span></span><span class="arr">→</span></a>
+        </div>
+        <div class="tocgroup">
+          <div class="toch">🧑‍🏫 クラスづくり</div>
+          <a class="tocitem" href="sekigae.html"><span class="em">🪑</span><span class="tx"><b>席替えツール</b><span>配慮もまるごとおまかせで席替え</span></span><span class="arr">→</span></a>
+          <a class="tocitem" href="touban.html"><span class="em">🙋</span><span class="tx"><b>係・当番ぎめ</b><span>公平に自動決定・印刷／掲示・ローテーション</span></span><span class="arr">→</span></a>
+          <a class="tocitem" href="shojo.html"><span class="em">🏆</span><span class="tx"><b>賞状・がんばりカード</b><span>賞状を即印刷・名簿で全員ぶん一括</span></span><span class="arr">→</span></a>
+        </div>
+        <div class="tocgroup">
+          <div class="toch">📋 土台</div>
+          <a class="tocitem" href="meibo.html"><span class="em">📋</span><span class="tx"><b>クラス名簿</b><span>名前を一度登録→各ツールでワンタップ呼び出し</span></span><span class="arr">→</span></a>
+        </div>
+      </div>
+    </div>
+
+    <div class="catsec" data-cat="print">
     <div class="cat">📄 プリントをつくる <span class="cnt">印刷してそのまま使える</span></div>
     <div class="tools">
       <a class="card" href="keisan.html">
@@ -251,7 +292,7 @@
   }
   tabs.forEach(t=>t.onclick=()=>show(t.dataset.cat));
   let saved=null; try{ saved=localStorage.getItem("nicchoku_cat"); }catch(e){}
-  show(saved && tabs.some(t=>t.dataset.cat===saved) ? saved : "print");
+  show(saved && tabs.some(t=>t.dataset.cat===saved) ? saved : "all");
 })();
 if("serviceWorker" in navigator){ window.addEventListener("load",()=>navigator.serviceWorker.register("sw.js").catch(()=>{})); }
 </script>
