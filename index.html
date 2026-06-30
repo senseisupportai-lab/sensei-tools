@@ -66,6 +66,21 @@
   .rule{ height:2px; margin:18px 8px 4px; border-radius:2px;
     background:repeating-linear-gradient(90deg, var(--chalk-dim) 0 16px, transparent 16px 24px); opacity:.7; }
   .todaylabel{ color:var(--yellow); font-size:13px; font-weight:bold; letter-spacing:.08em; padding-left:8px; }
+  /* カテゴリ見出し */
+  .cat{ color:var(--yellow); font-size:15px; font-weight:bold; letter-spacing:.05em; padding-left:8px;
+        margin-top:20px; display:flex; align-items:center; gap:8px; }
+  .cat:first-of-type{ margin-top:6px; }
+  .cat .cnt{ color:var(--chalk-dim); font-weight:normal; font-size:11.5px; letter-spacing:0; }
+  .cat:first-of-type{ margin-top:14px; }
+  /* カテゴリのタブ（ボタン切り替え） */
+  .tabs{ display:flex; flex-wrap:wrap; gap:8px; justify-content:center; margin-top:6px; }
+  .tab{ background:rgba(245,241,232,.06); border:1.6px dashed rgba(245,241,232,.5); color:var(--chalk);
+        border-radius:22px; padding:8px 15px; font-size:13.5px; font-weight:bold; cursor:pointer; font-family:inherit;
+        display:inline-flex; align-items:center; gap:6px; transition:background .1s,border-color .1s,color .1s; }
+  .tab:hover{ border-color:var(--yellow); }
+  .tab.on{ background:var(--yellow); border-color:var(--yellow); color:var(--green2); border-style:solid; }
+  .catsec{ display:none; }
+  .catsec.show{ display:block; }
 
   /* ── ツール一覧（黒板の上にチョークで書いたカード） ── */
   .tools{ display:grid; grid-template-columns:repeat(auto-fill,minmax(240px,1fr)); gap:14px; margin-top:14px; }
@@ -83,6 +98,11 @@
   .card p{ font-size:12.5px; color:var(--chalk-dim); margin:9px 0 13px; flex:1; line-height:1.85; }
   .card .open{ align-self:flex-start; color:var(--green2); background:var(--chalk); border-radius:22px;
     padding:7px 18px; font-size:13.5px; font-weight:bold; }
+  /* 開発中（クリック不可） */
+  .card.soon{ opacity:.6; cursor:default; }
+  .card.soon:hover{ transform:none; background:rgba(245,241,232,.04); border-color:rgba(245,241,232,.5); }
+  .card.soon .badge{ background:rgba(245,241,232,.3); color:var(--chalk); }
+  .card.soon .open{ background:rgba(245,241,232,.16); color:var(--chalk-dim); }
 
   /* 木のチョーク受け */
   .tray{ height:14px; margin:0 -2px; border-radius:0 0 12px 12px;
@@ -126,15 +146,16 @@
     <div class="xtop"><a href="https://x.com/sensei_support" target="_blank" rel="noopener">𝕏 @sensei_support（つくった人：たんく）</a></div>
 
     <div class="rule"></div>
-    <div class="todaylabel">きょうの道具</div>
 
+    <div class="tabs">
+      <button class="tab on" type="button" data-cat="print">📄 プリント</button>
+      <button class="tab" type="button" data-cat="lesson">🔔 授業中</button>
+      <button class="tab" type="button" data-cat="class">🧑‍🏫 クラスづくり</button>
+    </div>
+
+    <div class="catsec show" data-cat="print">
+    <div class="cat">📄 プリントをつくる <span class="cnt">印刷してそのまま使える</span></div>
     <div class="tools">
-      <a class="card" href="sekigae.html">
-        <div class="top"><span class="emoji">🪑</span><h2>席替えツール</h2></div>
-        <p>名前を入れてボタンを押すだけ。離したい子・前にしたい子などの配慮もまるごとおまかせ。子どもの情報は<span class="nb">端末の外に出ません。</span></p>
-        <span class="open">ひらく →</span>
-      </a>
-
       <a class="card" href="keisan.html">
         <div class="top"><span class="emoji">🧮</span><h2>計算プリント</h2></div>
         <p>学年をえらんでボタンを押すだけ。毎回ちがう問題と丸つけ用の答えも自動生成。宿題・朝学・小テストに<span class="nb">そのまま印刷。</span></p>
@@ -149,13 +170,35 @@
 
       <a class="card" href="kanji.html">
         <div class="top"><span class="emoji">📝</span><h2>漢字プリント</h2><span class="badge">NEW</span></div>
-        <p>学年をえらんでボタンを押すだけ。学年で習う漢字から毎回ちがう書き取り問題と、丸つけ用の答えも自動生成。宿題・朝学・小テストに<span class="nb">そのまま印刷。</span></p>
+        <p>学年と「習った漢字」をえらぶだけ。学期の途中でもOK。縦書きの書き取り問題と答えを自動生成。答えは明朝体（とめ・はね・はらい）。A4横で<span class="nb">そのまま印刷。</span></p>
         <span class="open">ひらく →</span>
       </a>
+    </div>
+    </div>
 
+    <div class="catsec" data-cat="lesson">
+    <div class="cat">🔔 授業中につかう <span class="cnt">その場でパッと</span></div>
+    <div class="tools">
       <a class="card" href="timer.html">
         <div class="top"><span class="emoji">⏱️</span><h2>黒板タイマー</h2></div>
         <p>教室の黒板みたいなタイマー。音を消しても“光”で終わりが伝わるから、聴覚過敏の子にも安心。授業の流れを連続でセットすれば<span class="nb">自動で次へ。</span></p>
+        <span class="open">ひらく →</span>
+      </a>
+
+      <a class="card" href="roulette.html">
+        <div class="top"><span class="emoji">🎯</span><h2>ルーレット指名</h2><span class="badge">NEW</span></div>
+        <p>名前を入れてボタンを押すだけ。今日あてる人を、ぐるっと回るルーレットでランダムに。「当てた人を外す」で、いつも同じ子ばかりにならず<span class="nb">みんなに順番がまわります。</span></p>
+        <span class="open">ひらく →</span>
+      </a>
+    </div>
+    </div>
+
+    <div class="catsec" data-cat="class">
+    <div class="cat">🧑‍🏫 クラスづくり <span class="cnt">学級経営のひと工夫</span></div>
+    <div class="tools">
+      <a class="card" href="sekigae.html">
+        <div class="top"><span class="emoji">🪑</span><h2>席替えツール</h2></div>
+        <p>名前を入れてボタンを押すだけ。離したい子・前にしたい子などの配慮もまるごとおまかせ。子どもの情報は<span class="nb">端末の外に出ません。</span></p>
         <span class="open">ひらく →</span>
       </a>
 
@@ -165,17 +208,12 @@
         <span class="open">ひらく →</span>
       </a>
 
-      <a class="card" href="shojo.html">
-        <div class="top"><span class="emoji">🏆</span><h2>賞状・がんばりカード</h2><span class="badge">NEW</span></div>
+      <div class="card soon" aria-disabled="true" title="開発中です。もうすぐ公開します">
+        <div class="top"><span class="emoji">🏆</span><h2>賞状・がんばりカード</h2><span class="badge">開発中</span></div>
         <p>賞名と本文をえらんで、すぐ印刷。名簿をよみこめばクラス全員ぶんを一括作成。日々のごほうびの小さなカードも、年度末の賞状も。子どもの名前は<span class="nb">端末の外に出ません。</span></p>
-        <span class="open">ひらく →</span>
-      </a>
-
-      <a class="card" href="roulette.html">
-        <div class="top"><span class="emoji">🎯</span><h2>ルーレット指名</h2><span class="badge">NEW</span></div>
-        <p>名前を入れてボタンを押すだけ。今日あてる人を、ぐるっと回るルーレットでランダムに。「当てた人を外す」で、いつも同じ子ばかりにならず<span class="nb">みんなに順番がまわります。</span></p>
-        <span class="open">ひらく →</span>
-      </a>
+        <span class="open">もうすぐ公開 🔧</span>
+      </div>
+    </div>
     </div>
   </div>
   <div class="tray"></div>
@@ -202,6 +240,19 @@
   </div>
 </div>
 <script>
+/* カテゴリのタブ切り替え（選んだカテゴリだけ表示） */
+(function(){
+  const tabs=[...document.querySelectorAll(".tab")];
+  const secs=[...document.querySelectorAll(".catsec")];
+  function show(cat){
+    tabs.forEach(t=>t.classList.toggle("on", t.dataset.cat===cat));
+    secs.forEach(s=>s.classList.toggle("show", s.dataset.cat===cat));
+    try{ localStorage.setItem("nicchoku_cat", cat); }catch(e){}
+  }
+  tabs.forEach(t=>t.onclick=()=>show(t.dataset.cat));
+  let saved=null; try{ saved=localStorage.getItem("nicchoku_cat"); }catch(e){}
+  show(saved && tabs.some(t=>t.dataset.cat===saved) ? saved : "print");
+})();
 if("serviceWorker" in navigator){ window.addEventListener("load",()=>navigator.serviceWorker.register("sw.js").catch(()=>{})); }
 </script>
 </body>
