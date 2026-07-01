@@ -194,7 +194,7 @@
     <div class="gchips" id="genderChips"></div>
     <div id="genderInfo" style="margin-top:6px; font-size:12.5px; color:#7a8a6b; font-weight:bold;"></div>
     <label class="ckbox" style="margin-top:8px;"><input type="checkbox" id="optBalance"> 男女がなるべく均等になるように分ける</label>
-    <div class="hint" style="margin-top:2px;">※係の人数が奇数のときや、片方の人数が足りないときは、できる範囲で近づけます。掲示ひょうに男女は出ません。</div>
+    <div class="hint" style="margin-top:2px;">※<a href="meibo.html" style="color:#5a8a3c; font-weight:bold;">クラス名簿</a>で男女を登録しておくと「📋 名簿を読み込む」でここに自動で入ります（この端末の中だけ）。係の人数が奇数のときなどは、できる範囲で近づけます。掲示ひょうに男女は出ません。</div>
   </div>
 
   <div class="step noprint">
@@ -470,7 +470,11 @@ function applyState(s){
   if(s.names!=null) $("names").value=s.names;
   if(typeof s.rotate==="boolean") $("optRotate").checked=s.rotate;
   if(typeof s.noDouble==="boolean") $("optNoDouble").checked=s.noDouble;
+  if(typeof s.balance==="boolean") $("optBalance").checked=s.balance;
   $("jobs").innerHTML=""; (s.jobs&&s.jobs.length?s.jobs:[]).forEach(j=>addJob(j.emoji,j.name,j.count));
+  genderMap=s.gender||{};
+  $("sameGroups").innerHTML=""; (s.same||[]).forEach(g=>addSameGroup(g));
+  buildGenderChips();
   prevAssignment=s.prev||{};
   lastResult=s.result||null;
   restoring=false; updateCount();
@@ -498,10 +502,11 @@ function importBackup(file){
 }
 
 /* ---- イベント ---- */
-$("names").addEventListener("input", ()=>{ updateCount(); });
+$("names").addEventListener("input", ()=>{ updateCount(); buildGenderChips(); rebuildSameOptions(); });
 document.addEventListener("input", persist);
 document.addEventListener("change", persist);
 $("addJob").onclick=()=>addJob("🌱","",1);
+$("addSame").onclick=()=>addSameGroup();
 $("go").onclick=()=>{ userDecided=true; run(); };
 $("again").onclick=()=>{ userDecided=true; run(); };
 $("printBtn").onclick=()=>{ if(!lastResult||!lastResult.res){ alert("先に「きめる！」を押してね。"); return; } window.print(); };
@@ -513,19 +518,26 @@ $("importFile").addEventListener("change", e=>{ if(e.target.files[0]) importBack
 const MEIBO_KEY="sensei_meibo_v1";
 function loadMeibo(){ try{ const o=JSON.parse(localStorage.getItem(MEIBO_KEY)); return (o&&Array.isArray(o.names))?o:null; }catch(e){ return null; } }
 function saveMeibo(names){ try{ localStorage.setItem(MEIBO_KEY, JSON.stringify({names, updatedAt:Date.now()})); return true; }catch(e){ return false; } }
+/* 男女は名簿本体とは別キー・名前ひも付け（他ツールで名簿を上書き保存しても消えない） */
+const GENDER_KEY="sensei_gender_v1";
+function loadGender(){ try{ const o=JSON.parse(localStorage.getItem(GENDER_KEY)); return (o&&o.gender&&typeof o.gender==="object")?o.gender:{}; }catch(e){ return {}; } }
+function saveGender(map){ try{ localStorage.setItem(GENDER_KEY, JSON.stringify({gender:map, updatedAt:Date.now()})); }catch(e){} }
 function meiboFlash(t,warn){ const el=$("meiboMsg"); el.textContent=t; el.style.color=warn?"#b9622a":"#3f6b27"; }
 $("meiboLoad").onclick=()=>{
   const m=loadMeibo();
   if(!m||!m.names.length){ meiboFlash("まだ名簿がありません。名前を入れて「名簿に保存」か、名簿ページで登録してね。",true); return; }
+  const g=loadGender(); const gCount=Object.keys(g).filter(n=>m.names.includes(n)).length;
+  genderMap={...g};                         // 名簿の男女も一緒に取り込む
   $("names").value=m.names.join("\n");
-  $("names").dispatchEvent(new Event("input")); persist();
-  meiboFlash("名簿（"+m.names.length+"人）を読み込みました🌱");
+  $("names").dispatchEvent(new Event("input")); persist();   // input で男女チップも再描画される
+  meiboFlash("名簿（"+m.names.length+"人）を読み込みました🌱"+(gCount?"（男女"+gCount+"人ぶんも取り込み）":""));
 };
 $("meiboSave").onclick=()=>{
   const names=rosterNames();
   if(!names.length){ meiboFlash("先に名前を入れてね。",true); return; }
-  saveMeibo(names);
-  meiboFlash("名簿（"+names.length+"人）を保存しました🌱 他の道具でも使えます。");
+  saveMeibo(names); saveGender(genderMap);   // 男女も名簿へ保存
+  const gCount=Object.keys(genderMap).filter(n=>names.includes(n)).length;
+  meiboFlash("名簿（"+names.length+"人）を保存しました🌱"+(gCount?"（男女"+gCount+"人ぶんも）":"")+" 他の道具でも使えます。");
 };
 
 /* プリセット・ボタン生成 */
@@ -544,7 +556,7 @@ if(saved){
   [["📚","図書係",2],["🧹","黒板係",2],["📄","くばり係",2],["💡","電気係",1],
    ["🪟","まど・かんき係",2],["🐹","生きもの係",2],["🎉","レク・あそび係",2],["📢","号令係",1]
   ].forEach(([e,n,c])=>addJob(e,n,c));
-  updateCount(); run();
+  buildGenderChips(); updateCount(); run();
 }
 
 /* 来訪カウンター：送るのは「アクセスがあった」事実のみ（入力データは一切送らない） */

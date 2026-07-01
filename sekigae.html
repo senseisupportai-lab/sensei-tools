@@ -68,6 +68,8 @@
   .seat.empty { background:#f0f3ec; color:#b9c4ac; font-weight:normal; border-style:dashed; }
   .seat.front { box-shadow: inset 0 -4px 0 #ffe08a; }
   .seat.clash { box-shadow: inset 0 0 0 2px #e88; }
+  .seat.gf { background:#fde3ee; border-color:#f3aacb; }
+  .seat.gm { background:#e0edfb; border-color:#a8cbf0; }
   .seat .badge { position:absolute; top:3px; right:5px; font-size:10px; color:#c08a00; }
   .back-label { text-align:center; color:#8a9a7c; font-size:12px; margin-top:12px; }
   .flick { background:#eef6e4; }
@@ -216,6 +218,11 @@
     <button class="go ghost" id="again">もう一回</button>
   </div>
   <div id="msg"></div>
+
+  <div id="genderCtl" style="display:none; text-align:center; margin:2px 0 12px;">
+    <label class="ckbox" style="margin:0;"><input type="checkbox" id="optGender" checked> ♀♂ 男女で色分け</label>
+    <span class="hint" style="margin-left:8px;"><span style="background:#fde3ee;border:1px solid #f3aacb;color:#b5397a;border-radius:10px;padding:1px 7px;">♀</span> <span style="background:#e0edfb;border:1px solid #a8cbf0;color:#2e6bb0;border-radius:10px;padding:1px 7px;">♂</span>　男女は<a href="meibo.html" style="color:#5a8a3c;font-weight:bold;">クラス名簿</a>で登録</span>
+  </div>
 
   <div class="board-label">前（こくばん）</div>
   <div style="overflow-x:auto;"><div class="grid" id="grid"></div></div>
@@ -435,10 +442,11 @@ function generate(names,cols,rows,apartGroups,closeGroups,frontSet,apartModes,ne
 
 function render(seats,cols,frontSet,flicker,clashNames,inactive){
   const grid=$("grid"); grid.style.gridTemplateColumns=`repeat(${cols},minmax(54px,1fr))`; grid.innerHTML="";
+  const gon = !!($("optGender") && $("optGender").checked);
   seats.forEach((n,i)=>{
     const isOff = inactive && inactive.has(i);
     const d=document.createElement("div");
-    d.className="seat"+((n&&!isOff)?"":" empty")+(n&&frontSet.has(n)?" front":"")+(flicker?" flick":"")+((!flicker&&n&&clashNames&&clashNames.has(n))?" clash":"");
+    d.className="seat"+((n&&!isOff)?"":" empty")+(n&&frontSet.has(n)?" front":"")+(flicker?" flick":"")+((!flicker&&n&&clashNames&&clashNames.has(n))?" clash":"")+((!flicker&&gon&&n&&genderMap[n])?(genderMap[n]==="f"?" gf":" gm"):"");
     if(isOff){ d.style.visibility="hidden"; }       // 席そのものが無い（うしろの欠け）→ 非表示
     else { d.textContent=n||"あき"; if(n&&frontSet.has(n)){ const b=document.createElement("span"); b.className="badge"; b.textContent="前"; d.appendChild(b); } }
     grid.appendChild(d);
@@ -583,13 +591,21 @@ $("importFile").addEventListener("change", e=>{ if(e.target.files[0]) importBack
 const MEIBO_KEY="sensei_meibo_v1";
 function loadMeibo(){ try{ const o=JSON.parse(localStorage.getItem(MEIBO_KEY)); return (o&&Array.isArray(o.names))?o:null; }catch(e){ return null; } }
 function saveMeibo(names){ try{ localStorage.setItem(MEIBO_KEY, JSON.stringify({names, updatedAt:Date.now()})); return true; }catch(e){ return false; } }
+/* 男女（名簿と同じ別キー。席替えでは画面の色分けにだけ使う。印刷はないので掲示に出ない） */
+const GENDER_KEY="sensei_gender_v1";
+function loadGender(){ try{ const o=JSON.parse(localStorage.getItem(GENDER_KEY)); return (o&&o.gender&&typeof o.gender==="object")?o.gender:{}; }catch(e){ return {}; } }
+let genderMap=loadGender();   // {名前:"f"|"m"}
+function reRenderSeats(){ if(lastResult&&lastResult.seats){ render(lastResult.seats, lastResult.cols||(parseInt($("cols").value)||6), frontSelected, false, new Set(lastResult.clash||[]), new Set(lastResult.inactive||[])); } }
+function refreshGenderUI(){ $("genderCtl").style.display = Object.keys(genderMap).length ? "block" : "none"; reRenderSeats(); }
 function meiboFlash(t,warn){ const el=$("meiboMsg"); el.textContent=t; el.style.color=warn?"#b9622a":"#3f6b27"; }
 $("meiboLoad").onclick=()=>{
   const m=loadMeibo();
   if(!m||!m.names.length){ meiboFlash("まだ名簿がありません。名前を入れて「名簿に保存」か、名簿ページで登録してね。",true); return; }
   $("names").value=m.names.join("\n");
   $("names").dispatchEvent(new Event("input")); persist();
-  meiboFlash("名簿（"+m.names.length+"人）を読み込みました🌱");
+  genderMap=loadGender(); refreshGenderUI();
+  const g=Object.keys(genderMap).filter(n=>m.names.includes(n)).length;
+  meiboFlash("名簿（"+m.names.length+"人"+(g?"・男女"+g+"人":"")+"）を読み込みました🌱");
 };
 $("meiboSave").onclick=()=>{
   const names=rosterNames();
@@ -597,6 +613,7 @@ $("meiboSave").onclick=()=>{
   saveMeibo(names);
   meiboFlash("名簿（"+names.length+"人）を保存しました🌱 他の道具でも使えます。");
 };
+$("optGender").onchange=reRenderSeats;
 
 const saved=(()=>{ try{ return JSON.parse(localStorage.getItem(LS_KEY)); }catch(e){ return null; } })();
 if(saved){ applyState(saved); showResultOrRun(); }
@@ -607,6 +624,7 @@ else {
   frontSelected.add("みお"); buildFrontChips();
   updateLayoutInfo(); run();
 }
+refreshGenderUI();
 /* 来訪カウンター：送るのは「アクセスがあった」事実のみ（入力データは一切送らない）。同一端末の連打は弾く（初回だけ加算、以降は読むだけ） */
 (function(){
   const NS="senseisupportai-lab", KEY="sekigae";

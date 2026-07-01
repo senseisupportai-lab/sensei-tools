@@ -64,6 +64,17 @@
   .ckbox{ display:inline-flex; align-items:center; gap:7px; margin:0 16px 8px 0; font-weight:normal; color:#2f3b2a; font-size:14px; cursor:pointer; }
   .ckbox input{ width:17px; height:17px; }
 
+  /* 男女バランス */
+  .glist{ display:grid; grid-template-columns:repeat(auto-fill,minmax(158px,1fr)); gap:7px; }
+  .gitem{ display:flex; align-items:center; gap:6px; background:#fbfdf8; border:1px solid #e6edda; border-radius:10px; padding:5px 7px 5px 10px; }
+  .gitem .gname{ flex:1; font-size:14px; color:#2f3b2a; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .gtoggle{ display:inline-flex; gap:3px; flex:0 0 auto; }
+  .gtoggle button{ border:1.5px solid #d3e0c4; background:#fff; color:#8a9a7c; font-weight:bold; font-size:13px; width:34px; height:30px; border-radius:8px; cursor:pointer; font-family:inherit; }
+  .gtoggle button.on.m{ background:#4e7fe0; border-color:#4e7fe0; color:#fff; }
+  .gtoggle button.on.f{ background:#e06aa0; border-color:#e06aa0; color:#fff; }
+  #ratioInfo{ font-size:13px; font-weight:bold; color:#3f6b27; margin:9px 0 2px; }
+  .gquick{ background:#fff; border:1.5px solid #cfe0bb; color:#7a8a6b; border-radius:8px; padding:5px 11px; font-size:12px; cursor:pointer; font-family:inherit; }
+
   /* はなすペア */
   .pairrow{ display:flex; gap:7px; align-items:center; background:#fbfdf8; border:1px solid #e6edda; border-radius:10px;
             padding:7px 9px; margin-bottom:7px; flex-wrap:wrap; }
@@ -97,8 +108,11 @@
   .hhead .hn{ margin-left:auto; font-size:11px; color:#9bae86; font-weight:bold; }
   .hmembers{ display:flex; flex-wrap:wrap; gap:6px; }
   .mchip{ background:#eef6e4; border:1px solid #cfe3b8; color:#33402c; border-radius:20px; padding:4px 12px; font-size:14.5px; font-weight:bold; }
+  .mchip.gm{ background:#eaf1fb; border-color:#c2d6f2; color:#2b4a82; }
+  .mchip.gf{ background:#fbeaf2; border-color:#f2c6db; color:#8a3163; }
   .mchip.leader{ background:#fff4d6; border-color:#eccf7a; color:#8a6a1a; }
   .hancard.flick .mchip{ opacity:.35; transition:opacity .12s; }
+  .htally{ font-size:11px; color:#7a8a6b; font-weight:bold; margin-left:auto; }
 
   .footer{ text-align:center; margin-top:34px; padding:16px; border-top:1px solid #e0e8d4; font-size:13px; color:#6c8a52; line-height:2; }
   .footer a{ color:#3f6b27; font-weight:bold; text-decoration:none; }
@@ -207,6 +221,13 @@
     <div style="margin-bottom:4px;">
       <label class="ckbox"><input type="checkbox" id="optLeader"> 各班に「班長」を1人ずつ決める</label>
       <label class="ckbox"><input type="checkbox" id="optRotate" checked> 前回とちがうメンバーにする</label>
+      <label class="ckbox"><input type="checkbox" id="optRatio"> 男女のバランスをそろえる</label>
+    </div>
+    <div id="genderWrap" style="display:none; margin:4px 0 14px; padding:11px 12px; background:#f6faf1; border:1px solid #e2ecd6; border-radius:11px;">
+      <div class="hint" style="margin-bottom:9px;">一人ずつ <b style="color:#4e7fe0;">男</b>／<b style="color:#e06aa0;">女</b> をえらんでね。各班になるべく同じ人数ずつ散らします。<br>（えらばない子は「どちらでも」として、人数が均等になるように振り分けます。）</div>
+      <div class="glist" id="genderList"></div>
+      <div id="ratioInfo"></div>
+      <button type="button" class="gquick" id="genderClear">えらんだ男女をぜんぶ消す</button>
     </div>
     <div style="margin-top:8px;">
       <label style="margin-bottom:7px;">この2人はべつの班に（相性など）</label>
@@ -248,6 +269,7 @@ let mode="groups";          // "groups" | "size"
 let naming="num";
 let pairId=0;
 let lastGroups=null;        // 直近の班分け（名前配列の配列）
+let GENDER={};              // { 名前: "M" | "F" }（このツールの中だけ・名簿には保存しない）
 
 const COLORS=[
   ["あか","#e05a4e"],["あお","#4e7fe0"],["きいろ","#e0b23a"],["みどり","#4ea85a"],
@@ -373,14 +395,79 @@ function refreshPairOptions(){
 }
 $("addPair").onclick=()=>{ addPair(); persist(); };
 
+/* ===== 男女バランス ===== */
+function genderOf(n){ return (GENDER[n]==="M"||GENDER[n]==="F") ? GENDER[n] : ""; }
+function buildGenderList(){
+  const wrap=$("genderList"); if(!wrap) return;
+  wrap.innerHTML="";
+  rosterNames().forEach(n=>{
+    const g=genderOf(n);
+    const item=document.createElement("div"); item.className="gitem";
+    item.innerHTML=`<span class="gname">${escapeHtml(n)}</span>`+
+      `<span class="gtoggle">`+
+        `<button type="button" data-g="M" class="${g==="M"?"on m":""}">男</button>`+
+        `<button type="button" data-g="F" class="${g==="F"?"on f":""}">女</button>`+
+      `</span>`;
+    item.querySelectorAll("button").forEach(b=>{
+      b.onclick=()=>{
+        GENDER[n] = (GENDER[n]===b.dataset.g) ? "" : b.dataset.g;   // 同じボタンをもう一度でオフ
+        buildGenderList();
+        if(lastGroups) renderBoard(lastGroups,false);
+        persist();
+      };
+    });
+    wrap.appendChild(item);
+  });
+  updateRatioInfo();
+}
+function ratioCounts(){
+  let m=0,f=0,o=0;
+  rosterNames().forEach(n=>{ const g=genderOf(n); if(g==="M")m++; else if(g==="F")f++; else o++; });
+  return {m,f,o};
+}
+function updateRatioInfo(){
+  const {m,f,o}=ratioCounts();
+  $("ratioInfo").textContent = `男 ${m}人・女 ${f}人`+(o?`・どちらでも ${o}人`:"");
+}
+$("optRatio").onchange=()=>{
+  $("genderWrap").style.display=$("optRatio").checked?"":"none";
+  if($("optRatio").checked) buildGenderList();
+  if(lastGroups) renderBoard(lastGroups,false);
+  persist();
+};
+$("genderClear").onclick=()=>{ GENDER={}; buildGenderList(); if(lastGroups) renderBoard(lastGroups,false); persist(); };
+
 /* 名前が変わったら：カウント・計算・ペア候補を更新 */
-function onNamesChange(){ updateCount(); updateCalc(); refreshPairOptions(); persist(); }
+function onNamesChange(){ updateCount(); updateCalc(); refreshPairOptions(); if($("optRatio").checked) buildGenderList(); persist(); }
 $("names").addEventListener("input", onNamesChange);
 
 /* ===== 班分け本体（配慮つき） ===== */
 function fill(shuffled,sizes){
   const groups=[]; let k=0;
   for(const s of sizes){ groups.push(shuffled.slice(k,k+s)); k+=s; }
+  return groups;
+}
+/* 男女を先に均等配分してから席を埋める（各班の男女差が最小になる） */
+function genderFill(byG, sizes){
+  const G=sizes.length;
+  const groups=Array.from({length:G},()=>[]);
+  const cap=sizes.slice();
+  const cnt=Array.from({length:G},()=>0);   // この種別が各班に何人入ったか
+  function place(list){
+    for(let i=0;i<G;i++) cnt[i]=0;
+    for(const name of list){
+      let best=-1;
+      for(let i=0;i<G;i++){
+        if(cap[i]<=0) continue;
+        if(best<0){ best=i; continue; }
+        // ①この種別が少ない班へ ②同数なら空きが多い班へ ③それも同じならランダム
+        if(cnt[i]<cnt[best] || (cnt[i]===cnt[best] && cap[i]>cap[best]) ||
+           (cnt[i]===cnt[best] && cap[i]===cap[best] && Math.random()<0.5)) best=i;
+      }
+      groups[best].push(name); cap[best]--; cnt[best]++;
+    }
+  }
+  place(byG.M); place(byG.F); place(byG.O);   // 男→女→どちらでも、の順に均等配分
   return groups;
 }
 function scoreOf(groups, sepPairs, avoidSet){
@@ -395,14 +482,22 @@ function scoreOf(groups, sepPairs, avoidSet){
   }
   return score;
 }
-function solve(names, sizes, sepPairs, avoidSet){
+function solve(names, sizes, sepPairs, avoidSet, useRatio){
   let best=null, bestScore=Infinity;
   const tries=600;
+  let byG=null;
+  if(useRatio){
+    byG={M:[],F:[],O:[]};
+    names.forEach(n=>{ const g=genderOf(n); byG[g||"O"].push(n); });
+  }
   for(let t=0;t<tries;t++){
-    const groups=fill(shuffle(names.slice()), sizes);
+    const groups = useRatio
+      ? genderFill({M:shuffle(byG.M.slice()), F:shuffle(byG.F.slice()), O:shuffle(byG.O.slice())}, sizes)
+      : fill(shuffle(names.slice()), sizes);
     const s=scoreOf(groups, sepPairs, avoidSet);
     if(s<bestScore){ bestScore=s; best=groups; if(s===0) break; }
   }
+  best=best.map(g=>shuffle(g.slice()));   // 表示順はランダムに（班長ぎめ・男女がかたまらないように）
   return {groups:best, score:bestScore};
 }
 function pairKeySet(groups){
@@ -419,13 +514,15 @@ function run(animate){
   const {G,sizes}=groupPlan();
   const sepPairs=getPairs();
   const avoidSet=($("optRotate").checked && lastGroups) ? pairKeySet(lastGroups) : new Set();
+  const useRatio=$("optRatio").checked;
 
-  const {groups,score}=solve(names, sizes, sepPairs, avoidSet);
+  const {groups,score}=solve(names, sizes, sepPairs, avoidSet, useRatio);
 
   // メッセージ
   const sepFail=Math.floor(score/1000);
+  const cares=[]; if(sepPairs.length) cares.push("「べつの班に」"); if(useRatio) cares.push("男女のバランス");
   if(sepFail>0){ msg.className="warn"; msg.textContent=`※ ${sepFail}組は、人数の都合でどうしても同じ班になりました。設定を見直すか、もう一回お試しください。`; }
-  else if(sepPairs.length){ msg.className="ok"; msg.textContent="「べつの班に」の配慮も守って分けました🌱"; }
+  else if(cares.length){ msg.className="ok"; msg.textContent=cares.join("・")+"の配慮も込みで分けました🌱"; }
   else { msg.className="ok"; msg.textContent="分けました🌱 「もう一回」で組み直せます。"; }
 
   lastGroups=groups;
@@ -438,19 +535,24 @@ function renderBoard(groups, animate){
   const board=$("board");
   board.innerHTML="";
   const withLeader=$("optLeader").checked;
+  const showG=$("optRatio").checked;
   groups.forEach((g,i)=>{
     const card=document.createElement("div");
     card.className="hancard"+(animate?" flick":"");
     const badge=hanBadge(i), col=hanColor(i);
     const leaderIdx = (withLeader && g.length) ? 0 : -1;   // シャッフル済み先頭を班長に
+    let gm=0,gf=0;
     const chips=g.map((n,idx)=>{
-      const isL=idx===leaderIdx;
-      return `<span class="mchip${isL?' leader':''}">${isL?'⭐ ':''}${escapeHtml(n)}</span>`;
+      const isL=idx===leaderIdx, gd=genderOf(n);
+      if(gd==="M")gm++; else if(gd==="F")gf++;
+      const gcls = showG ? (gd==="M"?" gm":gd==="F"?" gf":"") : "";
+      return `<span class="mchip${gcls}${isL?' leader':''}">${isL?'⭐ ':''}${escapeHtml(n)}</span>`;
     }).join("");
+    const tally = (showG && (gm+gf)) ? `<span class="htally">♂${gm}・♀${gf}</span>` : "";
     card.innerHTML=`<div class="hhead">
         <span class="hemoji" style="background:${col}">${badge}</span>
         <span class="htitle">${escapeHtml(hanName(i))}</span>
-        <span class="hn">${g.length}人</span>
+        ${tally}<span class="hn">${g.length}人</span>
       </div><div class="hmembers">${chips}</div>`;
     board.appendChild(card);
   });
@@ -473,7 +575,8 @@ function persist(){
     $("pairs").querySelectorAll(".pairrow").forEach(r=>pairs.push([r.querySelector(".pa").value, r.querySelector(".pb").value]));
     localStorage.setItem(LS_KEY, JSON.stringify({
       names:$("names").value, mode, amount:$("amount").value, naming,
-      leader:$("optLeader").checked, rotate:$("optRotate").checked, pairs, lastGroups
+      leader:$("optLeader").checked, rotate:$("optRotate").checked,
+      ratio:$("optRatio").checked, gender:GENDER, pairs, lastGroups
     }));
   }catch(e){}
 }
@@ -491,6 +594,10 @@ function restore(){
   $("naming").querySelectorAll(".rchip").forEach(l=>l.classList.toggle("on", l.querySelector("input").checked));
   $("optLeader").checked=!!s.leader;
   if(typeof s.rotate==="boolean") $("optRotate").checked=s.rotate;
+  if(s.gender && typeof s.gender==="object") GENDER=s.gender;
+  $("optRatio").checked=!!s.ratio;
+  $("genderWrap").style.display=$("optRatio").checked?"":"none";
+  if($("optRatio").checked) buildGenderList();
   (s.pairs||[]).forEach(p=>{ if(Array.isArray(p)) addPair(p[0],p[1]); });
   if(Array.isArray(s.lastGroups)) lastGroups=s.lastGroups;
   return true;

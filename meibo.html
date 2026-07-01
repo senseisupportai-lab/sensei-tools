@@ -50,6 +50,12 @@
   .safe{ background:#eef6e4; border:1px solid #cfe3b8; border-radius:9px; padding:9px 12px; margin-top:12px;
          font-size:12.5px; color:#3f6b27; line-height:1.75; }
 
+  label { display:block; font-weight:bold; color:#3f6b27; font-size:13px; margin:16px 0 5px; }
+  .gchips{ display:flex; flex-wrap:wrap; gap:6px; max-height:200px; overflow:auto; padding:2px; }
+  .gchip{ padding:5px 11px; border:1.5px solid #cfe0bb; border-radius:20px; cursor:pointer; font-size:13px; background:#fff; user-select:none; font-weight:bold; color:#7a8a6b; }
+  .gchip.f{ background:#fde3ee; border-color:#f3aacb; color:#b5397a; }
+  .gchip.m{ background:#e0edfb; border-color:#a8cbf0; color:#2e6bb0; }
+
   .uses{ display:grid; grid-template-columns:repeat(auto-fill,minmax(200px,1fr)); gap:10px; margin-top:4px; }
   .usecard{ display:flex; align-items:center; gap:10px; text-decoration:none; background:#fbfdf8; border:1.5px solid #e6edda;
             border-radius:12px; padding:11px 13px; color:#2f3b2a; transition:transform .1s, border-color .1s; }
@@ -93,6 +99,11 @@
     <div id="countInfo" style="margin-top:6px; font-size:14px; color:#3f6b27; font-weight:bold;"></div>
     <div class="hint" style="margin-top:2px;">※出席番号順でも、名前だけでも、ニックネームでもOK。あとから自由に直せます。</div>
     <div class="safe">🔒 入力した名前は、この端末の中だけに保存されます。私たちのサーバーには送信されません。</div>
+
+    <label>男女を登録する（任意）<span class="hint" style="font-weight:normal;">　名前をタップで ♀ → ♂ → 未設定。係・当番や班分けの「男女を均等に」で使えます。</span></label>
+    <div class="gchips" id="genderChips"></div>
+    <div id="genderInfo" style="margin-top:6px; font-size:12.5px; color:#7a8a6b; font-weight:bold;"></div>
+    <div class="hint" style="margin-top:3px;">※男女もこの端末の中だけ。掲示物や他の人に見える形にはなりません。</div>
   </div>
 
   <div class="step">
@@ -139,6 +150,30 @@ const rosterNames = () => $("names").value.split("\n").map(s=>s.trim()).filter(B
 const MEIBO_KEY="sensei_meibo_v1";
 function loadMeibo(){ try{ const o=JSON.parse(localStorage.getItem(MEIBO_KEY)); return (o&&Array.isArray(o.names))?o:null; }catch(e){ return null; } }
 function saveMeibo(names){ try{ localStorage.setItem(MEIBO_KEY, JSON.stringify({names, updatedAt:Date.now()})); return true; }catch(e){ return false; } }
+/* 男女は名簿本体とは別キー・名前ひも付け（名簿を上書きしても消えない） */
+const GENDER_KEY="sensei_gender_v1";
+function loadGender(){ try{ const o=JSON.parse(localStorage.getItem(GENDER_KEY)); return (o&&o.gender&&typeof o.gender==="object")?o.gender:{}; }catch(e){ return {}; } }
+function saveGender(map){ try{ localStorage.setItem(GENDER_KEY, JSON.stringify({gender:map, updatedAt:Date.now()})); }catch(e){} }
+
+let genderMap={};   // {名前:"f"|"m"}
+function buildGenderChips(){
+  const names=rosterNames();
+  Object.keys(genderMap).forEach(n=>{ if(!names.includes(n)) delete genderMap[n]; });
+  const box=$("genderChips"); box.innerHTML="";
+  names.forEach(n=>{
+    const g=genderMap[n];
+    const c=document.createElement("div");
+    c.className="gchip"+(g==="f"?" f":g==="m"?" m":"");
+    c.textContent=n+(g==="f"?" ♀":g==="m"?" ♂":" ・");
+    c.onclick=()=>{ const cur=genderMap[n];
+      if(!cur) genderMap[n]="f"; else if(cur==="f") genderMap[n]="m"; else delete genderMap[n];
+      buildGenderChips(); };
+    box.appendChild(c);
+  });
+  const f=Object.values(genderMap).filter(x=>x==="f").length;
+  const m=Object.values(genderMap).filter(x=>x==="m").length;
+  $("genderInfo").textContent = (f||m) ? `♀${f}人・♂${m}人・未設定${names.length-f-m}人` : "";
+}
 
 function updateCount(){
   const N=rosterNames().length;
@@ -155,25 +190,27 @@ function showSaved(){
   else { msg.className=""; msg.textContent=""; }
 }
 
-$("names").addEventListener("input", updateCount);
+$("names").addEventListener("input", ()=>{ updateCount(); buildGenderChips(); });
 
 $("saveBtn").onclick=()=>{
   const names=rosterNames();
   const msg=$("msg");
   if(!names.length){ msg.className="warn"; msg.textContent="まず名前を入れてね（1行に1人）。"; return; }
-  saveMeibo(names);
-  msg.className="ok"; msg.textContent=`名簿（${names.length}人）を保存しました🌱 席替え・係当番で「📋 名簿を読み込む」から使えます。`;
+  saveMeibo(names); saveGender(genderMap);
+  const g=Object.keys(genderMap).filter(n=>names.includes(n)).length;
+  msg.className="ok"; msg.textContent=`名簿（${names.length}人${g?`・男女${g}人`:""}）を保存しました🌱 席替え・係当番・班分けで「📋 名簿を読み込む」から使えます。`;
 };
 $("clearBtn").onclick=()=>{
   if(!loadMeibo()){ $("msg").className=""; $("msg").textContent="まだ保存された名簿はありません。"; return; }
-  if(!confirm("保存した名簿を消します。よろしいですか？（入力欄の文字は残ります）")) return;
-  try{ localStorage.removeItem(MEIBO_KEY); }catch(e){}
+  if(!confirm("保存した名簿と男女を消します。よろしいですか？（入力欄の名前の文字は残ります）")) return;
+  try{ localStorage.removeItem(MEIBO_KEY); localStorage.removeItem(GENDER_KEY); }catch(e){}
+  genderMap={}; buildGenderChips();
   $("msg").className=""; $("msg").textContent="名簿を消しました。";
 };
 
 /* ---- 控え（書き出し／読み込み） ---- */
 $("exportBtn").onclick=()=>{
-  const data=JSON.stringify({v:1, names:rosterNames()}, null, 2);
+  const data=JSON.stringify({v:1, names:rosterNames(), gender:genderMap}, null, 2);
   const url=URL.createObjectURL(new Blob([data],{type:"application/json"}));
   const a=document.createElement("a"); a.href=url; a.download="クラス名簿.json"; a.click();
   setTimeout(()=>URL.revokeObjectURL(url),1000);
@@ -184,7 +221,10 @@ $("importFile").addEventListener("change", e=>{
   if(!f) return;
   const r=new FileReader();
   r.onload=()=>{ try{ const o=JSON.parse(r.result); const ns=Array.isArray(o.names)?o.names:[];
-    $("names").value=ns.join("\n"); updateCount(); alert("控えから戻しました🌱 「💾 この名簿を保存」を押すと反映されます。"); }
+    $("names").value=ns.join("\n");
+    if(o.gender && typeof o.gender==="object") genderMap={...o.gender};
+    updateCount(); buildGenderChips();
+    alert("控えから戻しました🌱 「💾 この名簿を保存」を押すと反映されます。"); }
     catch(err){ alert("ファイルを読めませんでした。"); } };
   r.readAsText(f);
 });
@@ -193,7 +233,8 @@ $("importFile").addEventListener("change", e=>{
 (function init(){
   const m=loadMeibo();
   if(m && m.names.length){ $("names").value=m.names.join("\n"); }
-  updateCount(); showSaved();
+  genderMap=loadGender();
+  updateCount(); buildGenderChips(); showSaved();
 })();
 
 /* 来訪カウンター：送るのは「アクセスがあった」事実のみ（入力データは一切送らない） */
