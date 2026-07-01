@@ -717,6 +717,16 @@ renderPreview();
       }
     }).catch(()=>{});
 })();
+/* 名簿の自動反映：クラス名簿が更新されていたら、開いた時に自動で取り込む（この端末の中だけ。手動でいじった内容はそのまま、名簿を変えた時だけ反映） */
+(function(){
+  try{
+    const m=loadMeibo(); if(!m||!m.names||!m.names.length) return;
+    const SK="shojo_meibo_synced", cur=String(m.updatedAt||"");
+    if(localStorage.getItem(SK)===cur) return;
+    const b=document.getElementById("meiboLoad");
+    if(b){ b.click(); localStorage.setItem(SK,cur); }
+  }catch(e){}
+})();
 /* Service Worker：表示の高速化＆保険として静かに登録するだけ */
 if("serviceWorker" in navigator){ window.addEventListener("load",()=>navigator.serviceWorker.register("sw.js").catch(()=>{})); }
 </script>
