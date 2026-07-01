@@ -193,8 +193,14 @@ function makeRow(name, g){
   const del=document.createElement("button"); del.type="button"; del.className="rdel"; del.textContent="×"; del.title="この行を消す";
   del.onclick=()=>{ row.remove(); renumber(); updateCount(); };
   inp.addEventListener("input", updateCount);
-  // IME変換確定のEnterは無視し、確定後のEnterだけで空行を足す（日本語入力対策）
-  inp.addEventListener("keydown", e=>{ if(e.key==="Enter" && !e.isComposing && e.keyCode!==229){ e.preventDefault(); addRow("","",true); } });
+  // IME変換確定のEnterは無視。確定後のEnterで「次の行へ移動、無ければ追加」（日本語入力対策）
+  inp.addEventListener("keydown", e=>{
+    if(e.key==="Enter" && !e.isComposing && e.keyCode!==229){
+      e.preventDefault();
+      const next=row.nextElementSibling && row.nextElementSibling.querySelector(".rname");
+      if(next){ next.focus(); } else { addRow("","",true); }
+    }
+  });
   row.append(num,inp,sel,del);
   setG(g);
   return row;
