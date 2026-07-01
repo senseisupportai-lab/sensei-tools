@@ -74,6 +74,10 @@
   .gbtn.m.on{ background:#e0edfb; border-color:#a8cbf0; color:#2e6bb0; }
   .rdel{ flex:0 0 auto; width:30px; height:30px; border-radius:8px; border:1.5px solid #e7d3d3; background:#fff; color:#c98b8b; cursor:pointer; font-size:15px; line-height:1; }
   .rdel:hover{ border-color:#e0b4b4; color:#c0392b; }
+  .rhead .hmv{ flex:0 0 auto; width:22px; }
+  .rmove{ display:flex; flex-direction:column; gap:2px; flex:0 0 auto; }
+  .mvbtn{ width:22px; height:17px; border:1.5px solid #cfe0bb; background:#fff; color:#7fa35a; border-radius:5px; cursor:pointer; font-size:9px; line-height:1; padding:0; display:flex; align-items:center; justify-content:center; }
+  .mvbtn:hover{ border-color:#9cc473; }
   .addrow{ background:#fff; border:1.5px dashed #9cc473; color:#5a8a3c; border-radius:10px; padding:9px 16px; font-size:14px; cursor:pointer; margin-top:10px; font-family:inherit; }
   details.bulk{ margin-top:12px; }
   details.bulk>summary{ cursor:pointer; color:#5a8a3c; font-weight:bold; font-size:13px; list-style:none; }
@@ -118,12 +122,13 @@
 
   <div class="step">
     <div class="steptitle"><span class="stepnum">1</span>児童を1人ずつ入れる</div>
-    <div class="hint" style="margin-bottom:8px;">1行に1人。名前のとなりで男女もえらべます（任意）。♀→もう一度おすと解除。<b>Enterキー</b>で次の行へ。</div>
+    <div class="hint" style="margin-bottom:8px;">1行に1人。名前のとなりで男女もえらべます（任意）。♀→もう一度おすと解除。<b>Enterキー</b>で次の行へ。<b>▲▼で並べ替え</b>＝上からの順番が<b>出席番号</b>になります。</div>
     <div class="rhead">
-      <span class="hnum"></span><span class="hname">なまえ</span><span class="hg">男女（任意）</span><span class="hd"></span>
+      <span class="hnum">№</span><span class="hmv"></span><span class="hname">なまえ</span><span class="hg">男女（任意）</span><span class="hd"></span>
     </div>
     <div class="rlist" id="rows"></div>
     <button type="button" class="addrow" id="addRow">＋ 児童を追加</button>
+    <button type="button" class="addrow" id="sortBtn" style="margin-left:8px;">↕ 五十音でならべる</button>
 
     <details class="bulk">
       <summary>まとめて貼り付け（名前を一気に入力）</summary>
@@ -190,6 +195,12 @@ function makeRow(name, g){
   bf.onclick=()=>{ setG(row.dataset.g==="f"?"":"f"); updateCount(); };
   bm.onclick=()=>{ setG(row.dataset.g==="m"?"":"m"); updateCount(); };
   sel.append(bf,bm);
+  const mv=document.createElement("div"); mv.className="rmove";
+  const up=document.createElement("button"); up.type="button"; up.className="mvbtn"; up.textContent="▲"; up.title="上へ";
+  const dn=document.createElement("button"); dn.type="button"; dn.className="mvbtn"; dn.textContent="▼"; dn.title="下へ";
+  up.onclick=()=>{ const p=row.previousElementSibling; if(p){ row.parentNode.insertBefore(row,p); renumber(); } };
+  dn.onclick=()=>{ const nx=row.nextElementSibling; if(nx){ row.parentNode.insertBefore(nx,row); renumber(); } };
+  mv.append(up,dn);
   const del=document.createElement("button"); del.type="button"; del.className="rdel"; del.textContent="×"; del.title="この行を消す";
   del.onclick=()=>{ row.remove(); renumber(); updateCount(); };
   inp.addEventListener("input", updateCount);
@@ -201,7 +212,7 @@ function makeRow(name, g){
       if(next){ next.focus(); } else { addRow("","",true); }
     }
   });
-  row.append(num,inp,sel,del);
+  row.append(num,mv,inp,sel,del);
   setG(g);
   return row;
 }
@@ -237,6 +248,12 @@ function showSaved(){
 }
 
 $("addRow").onclick=()=>addRow("","",true);
+$("sortBtn").onclick=()=>{
+  const d=rowsData();                       // 入力済みの行だけ（空行は除く）
+  if(d.length<2){ return; }
+  d.sort((a,b)=>a.name.localeCompare(b.name,"ja"));
+  $("rows").innerHTML=""; d.forEach(x=>addRow(x.name,x.g)); renumber(); updateCount();
+};
 $("bulkApply").onclick=()=>{
   const lines=$("bulk").value.split("\n").map(s=>s.trim()).filter(Boolean);
   if(!lines.length){ return; }
