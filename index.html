@@ -94,6 +94,9 @@
   .tocitem .tx b{ font-size:14.5px; color:var(--chalk); }
   .tocitem .tx span{ display:block; font-size:11.5px; color:var(--chalk-dim); line-height:1.5; }
   .tocitem .arr{ margin-left:auto; color:var(--chalk-dim); font-weight:bold; }
+  /* 開発中（クリック不可） */
+  .tocitem.soon{ opacity:.55; cursor:default; pointer-events:none; }
+  .tocitem.soon .arr{ font-size:11px; background:rgba(245,241,232,.22); color:var(--chalk); border-radius:20px; padding:2px 9px; }
 
   /* ── ツール一覧（黒板の上にチョークで書いたカード） ── */
   .tools{ display:grid; grid-template-columns:repeat(auto-fill,minmax(240px,1fr)); gap:14px; margin-top:14px; }
@@ -121,19 +124,20 @@
   .tray{ height:14px; margin:0 -2px; border-radius:0 0 12px 12px;
     background:linear-gradient(var(--wood),var(--wood2)); box-shadow:inset 0 2px 4px rgba(0,0,0,.25); }
 
-  /* ── クラス名簿（道具の土台・別枠） ── */
-  .setup{ display:flex; align-items:center; gap:14px; flex-wrap:wrap;
-    background:#fbfdf8; border:1.6px solid #cfe3b8; border-left:6px solid #7fb35a; border-radius:14px;
-    padding:14px 18px; margin-top:18px; box-shadow:0 4px 12px rgba(90,138,60,.10); }
-  .setup-ic{ font-size:32px; line-height:1; flex:0 0 auto; }
-  .setup-tx{ flex:1; min-width:210px; }
-  .setup-tx .st-h{ color:#3f6b27; font-size:16px; font-weight:bold; display:flex; align-items:center; gap:8px; }
-  .setup-tx .st-badge{ background:#7fb35a; color:#fff; border-radius:20px; padding:1px 9px; font-size:10.5px; font-weight:bold; }
-  .setup-tx .st-p{ color:#6c8a52; font-size:12.5px; margin-top:3px; line-height:1.7; }
-  .setup-btn{ flex:0 0 auto; background:#7fb35a; color:#fff; text-decoration:none; font-weight:bold; font-size:14.5px;
-    border-radius:26px; padding:11px 22px; box-shadow:0 3px 0 #5a8a3c; white-space:nowrap; transition:transform .05s; }
-  .setup-btn:active{ transform:translateY(2px); box-shadow:0 1px 0 #5a8a3c; }
-  @media (max-width:520px){ .setup{ padding:13px 15px; } .setup-btn{ width:100%; text-align:center; } }
+  /* ── クラス名簿（道具の土台・黒板の最上段にチョークで） ── */
+  .meibo-cta{ display:flex; align-items:center; gap:13px; text-decoration:none;
+    background:rgba(242,183,5,.10); border:1.8px solid var(--yellow); border-radius:14px;
+    padding:13px 16px; margin-top:14px; transition:background .1s, transform .1s; }
+  .meibo-cta:hover{ background:rgba(242,183,5,.18); transform:translateY(-2px); }
+  .meibo-cta .meibo-ic{ font-size:30px; line-height:1; flex:0 0 auto; }
+  .meibo-cta .meibo-tx{ flex:1; min-width:0; }
+  .meibo-cta .meibo-tx b{ color:var(--chalk); font-size:15px; display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
+  .meibo-cta .meibo-badge{ background:var(--yellow); color:var(--green2); border-radius:20px; padding:1px 9px; font-size:10.5px; font-weight:bold; }
+  .meibo-cta .meibo-tx .d{ display:block; color:var(--chalk-dim); font-size:12px; margin-top:3px; line-height:1.7; }
+  .meibo-cta .hl{ color:var(--yellow); font-weight:bold; }
+  .meibo-cta .meibo-arr{ flex:0 0 auto; background:var(--yellow); color:var(--green2); border-radius:22px;
+    padding:8px 16px; font-size:13px; font-weight:bold; white-space:nowrap; }
+  @media (max-width:520px){ .meibo-cta{ flex-wrap:wrap; } .meibo-cta .meibo-arr{ width:100%; text-align:center; } }
 
   .safe{ background:#eef6e4; border:1px solid #cfe3b8; border-radius:12px; padding:11px 14px; margin-top:22px;
     font-size:12.5px; color:#3f6b27; line-height:1.85; text-align:center; }
@@ -160,6 +164,15 @@
 
     <div class="rule"></div>
 
+    <a class="meibo-cta" href="meibo.html">
+      <span class="meibo-ic">📋</span>
+      <span class="meibo-tx">
+        <b>まず、クラス名簿を登録 <span class="meibo-badge">土台</span></b>
+        <span class="d">名前を一度だけ登録すれば、席替え・係/当番・賞状など<span class="hl">どの道具からでもワンタップ</span>で呼び出し。名前は<span class="nb">この端末の外に出ません。</span></span>
+      </span>
+      <span class="meibo-arr">名簿をひらく →</span>
+    </a>
+
     <div class="tabs">
       <button class="tab on" type="button" data-cat="all">📋 一覧</button>
       <button class="tab" type="button" data-cat="print">📄 プリント</button>
@@ -185,7 +198,9 @@
           <div class="toch">🧑‍🏫 クラスづくり</div>
           <a class="tocitem" href="sekigae.html"><span class="em">🪑</span><span class="tx"><b>席替えツール</b><span>配慮もまるごとおまかせで席替え</span></span><span class="arr">→</span></a>
           <a class="tocitem" href="touban.html"><span class="em">🙋</span><span class="tx"><b>係・当番ぎめ</b><span>公平に自動決定・印刷／掲示・ローテーション</span></span><span class="arr">→</span></a>
-          <a class="tocitem" href="shojo.html"><span class="em">🏆</span><span class="tx"><b>賞状・がんばりカード</b><span>賞状を即印刷・名簿で全員ぶん一括</span></span><span class="arr">→</span></a>
+          <a class="tocitem" href="han.html"><span class="em">👥</span><span class="tx"><b>班・グループ分け</b><span>なるべく均等に・別の班に配慮・班長ぎめ・黒板／印刷</span></span><span class="arr">→</span></a>
+          <span class="tocitem soon" aria-disabled="true" title="開発中です。もうすぐ公開します"><span class="em">🏆</span><span class="tx"><b>賞状・がんばりカード</b><span>賞状を即印刷・名簿で全員ぶん一括</span></span><span class="arr">開発中</span></span>
+          <a class="tocitem" href="waku.html"><span class="em">🪧</span><span class="tx"><b>等分枠プリント</b><span>用紙を等分のマスに割って印刷（係カード・名札・くじ）</span></span><span class="arr">→</span></a>
         </div>
         <div class="tocgroup">
           <div class="toch">📋 土台</div>
@@ -249,24 +264,27 @@
         <span class="open">ひらく →</span>
       </a>
 
+      <a class="card" href="han.html">
+        <div class="top"><span class="emoji">👥</span><h2>班・グループ分け</h2><span class="badge">NEW</span></div>
+        <p>名前を入れてボタンひとつで、なるべく均等に班分け。「この2人はべつの班に」の配慮も、班長の自動指名も。そのまま黒板に映す・印刷して掲示。もう一度押せば前回と違うメンバーで<span class="nb">組み直し。</span></p>
+        <span class="open">ひらく →</span>
+      </a>
+
       <div class="card soon" aria-disabled="true" title="開発中です。もうすぐ公開します">
         <div class="top"><span class="emoji">🏆</span><h2>賞状・がんばりカード</h2><span class="badge">開発中</span></div>
         <p>賞名と本文をえらんで、すぐ印刷。名簿をよみこめばクラス全員ぶんを一括作成。日々のごほうびの小さなカードも、年度末の賞状も。子どもの名前は<span class="nb">端末の外に出ません。</span></p>
         <span class="open">もうすぐ公開 🔧</span>
       </div>
+
+      <a class="card" href="waku.html">
+        <div class="top"><span class="emoji">🪧</span><h2>等分枠プリント</h2><span class="badge">NEW</span></div>
+        <p>用紙を等分のマスに割って印刷。係カード・名札・くじ・ラベルなどの掲示物づくりに。切り取り線つきで、名簿をよみこめば名前も<span class="nb">一括で入ります。</span></p>
+        <span class="open">ひらく →</span>
+      </a>
     </div>
     </div>
   </div>
   <div class="tray"></div>
-
-  <div class="setup">
-    <div class="setup-ic">📋</div>
-    <div class="setup-tx">
-      <div class="st-h">クラス名簿 <span class="st-badge">NEW</span></div>
-      <div class="st-p">名前を一度だけ登録しておけば、席替え・係/当番など<b>どの道具からでもワンタップで呼び出し</b>。もう毎回打ち直さなくてOK。名前は<span class="nb">この端末の外に出ません。</span></div>
-    </div>
-    <a class="setup-btn" href="meibo.html">名簿をひらく →</a>
-  </div>
 
   <div class="safe">🔒 どのツールも、入力した内容はこの端末の中だけ。私たちのサーバーには送信されません。</div>
 

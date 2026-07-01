@@ -58,6 +58,17 @@
   .ckbox{ display:inline-flex; align-items:center; gap:6px; margin:0 16px 6px 0; font-weight:normal; color:#2f3b2a; font-size:14px; cursor:pointer; }
   .ckbox input{ width:16px; height:16px; }
 
+  /* 同じ係グループ（席替えツールと統一） */
+  .group{ border:1px solid #e6edda; background:#fbfdf8; border-radius:10px; padding:8px 10px; margin-bottom:8px;
+          display:flex; gap:6px; align-items:center; flex-wrap:wrap; }
+  .group .glabel{ font-size:12px; color:#7a8a6b; font-weight:bold; }
+  select.gsel{ padding:6px 6px; border:1.5px solid #cfe0bb; border-radius:8px; font-size:13px; min-width:92px; background:#fff; }
+  /* 男女チップ */
+  .gchips{ display:flex; flex-wrap:wrap; gap:6px; max-height:170px; overflow:auto; padding:2px; }
+  .gchip{ padding:5px 11px; border:1.5px solid #cfe0bb; border-radius:20px; cursor:pointer; font-size:13px; background:#fff; user-select:none; font-weight:bold; color:#7a8a6b; }
+  .gchip.f{ background:#fde3ee; border-color:#f3aacb; color:#b5397a; }
+  .gchip.m{ background:#e0edfb; border-color:#a8cbf0; color:#2e6bb0; }
+
   .go { display:inline-flex; align-items:center; gap:8px; background:#7fb35a; color:#fff; border:none;
         border-radius:30px; padding:12px 28px; font-size:17px; font-weight:bold; cursor:pointer; margin:4px 4px 0;
         box-shadow:0 3px 0 #5a8a3c; transition:transform .05s; }
@@ -174,6 +185,19 @@
   </div>
 
   <div class="step noprint">
+    <div class="steptitle">🧩 こまかい配慮（任意）</div>
+    <label>同じ係にしたい子 <span class="hint">（この子たちを、なるべく同じ係に。1グループ2〜4人・複数OK）</span></label>
+    <div id="sameGroups"></div>
+    <button class="addbtn" id="addSame">＋ グループを追加</button>
+
+    <label style="margin-top:16px;">男女で分ける <span class="hint">（名前をタップで ♀ → ♂ → 未設定。色でわかります）</span></label>
+    <div class="gchips" id="genderChips"></div>
+    <div id="genderInfo" style="margin-top:6px; font-size:12.5px; color:#7a8a6b; font-weight:bold;"></div>
+    <label class="ckbox" style="margin-top:8px;"><input type="checkbox" id="optBalance"> 男女がなるべく均等になるように分ける</label>
+    <div class="hint" style="margin-top:2px;">※係の人数が奇数のときや、片方の人数が足りないときは、できる範囲で近づけます。掲示ひょうに男女は出ません。</div>
+  </div>
+
+  <div class="step noprint">
     <div class="steptitle"><span class="stepnum">3</span>きめる！</div>
     <div style="margin-bottom:6px;">
       <label class="ckbox"><input type="checkbox" id="optRotate" checked> 前回と違う担当にする（ローテーション）</label>
@@ -248,29 +272,115 @@ function readJobs(){
   })).filter(j=>j.name);
 }
 
+/* ---- 同じ係にしたい子（グループ） ---- */
+function sameMakeSelect(value){
+  const s=document.createElement("select"); s.className="gsel";
+  const names=rosterNames();
+  const o0=document.createElement("option"); o0.value=""; o0.textContent="（なし）"; s.appendChild(o0);
+  names.forEach(n=>{ const o=document.createElement("option"); o.value=n; o.textContent=n; s.appendChild(o); });
+  if(value && names.includes(value)) s.value=value;
+  return s;
+}
+function addSameGroup(preset){
+  const g=document.createElement("div"); g.className="group";
+  const lab=document.createElement("span"); lab.className="glabel"; lab.textContent="同じ係に：";
+  g.appendChild(lab);
+  for(let i=0;i<4;i++) g.appendChild(sameMakeSelect(preset && preset[i]));
+  const rm=document.createElement("button"); rm.className="rm"; rm.textContent="削除"; rm.onclick=()=>{ g.remove(); persist(); };
+  g.appendChild(rm);
+  $("sameGroups").appendChild(g);
+  persist();
+}
+function readSameGroups(){
+  const out=[];
+  document.querySelectorAll("#sameGroups .group").forEach(g=>{
+    const m=[...new Set([...g.querySelectorAll(".gsel")].map(s=>s.value).filter(Boolean))];
+    if(m.length>=2) out.push(m);
+  });
+  return out;
+}
+function rebuildSameOptions(){
+  document.querySelectorAll("#sameGroups .gsel").forEach(sel=>{
+    const cur=sel.value, names=rosterNames();
+    sel.innerHTML="";
+    const o0=document.createElement("option"); o0.value=""; o0.textContent="（なし）"; sel.appendChild(o0);
+    names.forEach(n=>{ const o=document.createElement("option"); o.value=n; o.textContent=n; sel.appendChild(o); });
+    sel.value = names.includes(cur) ? cur : "";
+  });
+}
+
+/* ---- 男女（この端末の中だけ・掲示には出さない） ---- */
+let genderMap={};   // {名前:"f"|"m"}
+function buildGenderChips(){
+  const names=rosterNames();
+  Object.keys(genderMap).forEach(n=>{ if(!names.includes(n)) delete genderMap[n]; }); // 名簿にない子は消す
+  const box=$("genderChips"); box.innerHTML="";
+  names.forEach(n=>{
+    const g=genderMap[n];
+    const c=document.createElement("div");
+    c.className="gchip"+(g==="f"?" f":g==="m"?" m":"");
+    c.textContent=n+(g==="f"?" ♀":g==="m"?" ♂":" ・");
+    c.onclick=()=>{ const cur=genderMap[n];
+      if(!cur) genderMap[n]="f"; else if(cur==="f") genderMap[n]="m"; else delete genderMap[n];
+      buildGenderChips(); persist(); };
+    box.appendChild(c);
+  });
+  const f=Object.values(genderMap).filter(x=>x==="f").length;
+  const m=Object.values(genderMap).filter(x=>x==="m").length;
+  $("genderInfo").textContent = (f||m) ? `♀${f}人・♂${m}人・未設定${names.length-f-m}人` : "";
+}
+
 /* ---- わりあてロジック：負荷が低い人から選ぶ＝自然に全員1つ→均等 ---- */
-function generate(names, jobs, opts, prev){
+function generate(names, jobs, opts, prev, gmap, sameGroups){
+  gmap=gmap||{};
   const load={}; names.forEach(n=>load[n]=0);
   const res=jobs.map(j=>({emoji:j.emoji,name:j.name,count:j.count,members:[]}));
   const warnings=[];
+  const nameSet=new Set(names);
+  const remaining=job=>job.count-job.members.length;
+  const placeIn=(job,n)=>{ job.members.push(n); load[n]++; };
+
+  // 1) 「同じ係にしたい子」を先にまとめて配置
+  (sameGroups||[]).forEach(grp=>{
+    const g=[...new Set(grp.filter(n=>nameSet.has(n)))];
+    if(g.length<2) return;
+    // すでに置かれたメンバーがいれば、その係にそろえる
+    let target=null;
+    for(const n of g){ if(load[n]>0){ target=res.find(j=>j.members.includes(n)); break; } }
+    const unplaced=g.filter(n=>load[n]===0);
+    if(!unplaced.length) return;
+    if(target){
+      if(remaining(target)>=unplaced.length) unplaced.forEach(n=>placeIn(target,n));
+      else warnings.push(`「${g.join("・")}」は同じ係にしきれませんでした（席がたりません）`);
+      return;
+    }
+    // 空きがちょうど足りる、いちばん小さい係に入れる（大きい係はバランス用に残す）
+    const fit=res.filter(j=>remaining(j)>=unplaced.length);
+    if(!fit.length){ warnings.push(`「${g.join("・")}」は同じ係にできませんでした（この人数が入る係がありません）`); return; }
+    fit.sort((a,b)=>remaining(a)-remaining(b)||Math.random()-0.5);
+    unplaced.forEach(n=>placeIn(fit[0],n));
+  });
+
+  // 2) 残りを配置（公平＋男女バランス＋ローテーション）
+  const genderCountIn=(job,g)=>job.members.filter(n=>gmap[n]===g).length;
   res.forEach(job=>{
-    for(let s=0;s<job.count;s++){
+    while(remaining(job)>0){
       let cand=names.filter(n=>!job.members.includes(n));
       if(opts.noDouble) cand=cand.filter(n=>load[n]===0);
-      if(!cand.length){
-        const lack=job.count-job.members.length;
-        warnings.push(`${job.emoji}${job.name}：人がたりず ${lack}人ぶん空けました`);
-        break;
-      }
+      if(!cand.length){ warnings.push(`${job.emoji}${job.name}：人がたりず ${remaining(job)}人ぶん空けました`); break; }
       cand.sort((a,b)=>{
         if(load[a]!==load[b]) return load[a]-load[b];               // 担当が少ない人を優先
+        if(opts.balance){                                          // 男女バランス：少ない側の性別を先に
+          const sa=gmap[a]?genderCountIn(job,gmap[a]):0.5;
+          const sb=gmap[b]?genderCountIn(job,gmap[b]):0.5;
+          if(sa!==sb) return sa-sb;
+        }
         const pa=(opts.rotate && prev[a] && prev[a].includes(job.name))?1:0;  // 前回と同じ係は後回し
         const pb=(opts.rotate && prev[b] && prev[b].includes(job.name))?1:0;
         if(pa!==pb) return pa-pb;
         return Math.random()-0.5;
       });
-      const pick=cand[0];
-      job.members.push(pick); load[pick]++;
+      placeIn(job,cand[0]);
     }
   });
   const none=names.filter(n=>load[n]===0);
@@ -313,8 +423,8 @@ function run(){
   if(names.length===0){ msg.className="warn"; msg.textContent="名簿に名前を入れてね。"; return; }
   if(jobs.length===0){ msg.className="warn"; msg.textContent="係・当番を1つ以上ならべてね。"; return; }
 
-  const opts={ rotate:$("optRotate").checked, noDouble:$("optNoDouble").checked };
-  const result=generate(names, jobs, opts, prevAssignment);
+  const opts={ rotate:$("optRotate").checked, noDouble:$("optNoDouble").checked, balance:$("optBalance").checked };
+  const result=generate(names, jobs, opts, prevAssignment, genderMap, readSameGroups());
 
   $("go").disabled=true; $("again").disabled=true; msg.className=""; msg.textContent="きめています…";
   let ticks=0;
@@ -349,7 +459,8 @@ function run(){
 const LS_KEY="touban_v1";
 function snapshotInputs(){
   return { v:1, names:$("names").value, jobs:readJobs(),
-    rotate:$("optRotate").checked, noDouble:$("optNoDouble").checked };
+    rotate:$("optRotate").checked, noDouble:$("optNoDouble").checked, balance:$("optBalance").checked,
+    gender:genderMap, same:readSameGroups() };
 }
 function persist(){ if(restoring) return; try{
   localStorage.setItem(LS_KEY, JSON.stringify({...snapshotInputs(), result:lastResult, prev:prevAssignment}));

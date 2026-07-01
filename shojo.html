@@ -88,28 +88,41 @@
   /* 共通：賞状・カードの「紙」 */
   .sheet{ position:relative; background:var(--pap); color:#222; overflow:hidden; }
 
-  /* ── 賞状（桜＋金の装飾画像を背景に、中央へ文字を重ねる） ── */
+  /* ── 賞状（白地＋金の二重罫＋四隅の金飾り。高級感重視・すべてベクター） ── */
   /* 文字サイズは JS が紙幅に比例して設定（画面＝要素幅／印刷＝A4実寸） */
-  .cert{ --pap:#fffdf5; width:100%; max-width:760px; aspect-ratio:297/210; box-shadow:0 8px 24px rgba(0,0,0,.18);
+  .cert{ --gold:#b0903e; --gold2:#caa44e; --pap:#fffdf8;
+    width:100%; max-width:760px; aspect-ratio:297/210; background:var(--pap);
+    box-shadow:0 10px 30px rgba(60,50,20,.16);
     /* 賞状は明朝体で格式を出す */
     font-family:"Hiragino Mincho ProN","Hiragino Mincho Pro","Yu Mincho",YuMincho,"Noto Serif JP","Shippori Mincho","Songti SC",serif; }
-  .cert .cert-bg{ position:absolute; inset:0; width:100%; height:100%; object-fit:cover; }
+  /* 二重の金罫（外＝太め／内＝細） */
+  .cert .frame{ position:absolute; inset:3.6%; border:0.13em solid var(--gold); pointer-events:none; }
+  .cert .frame::before{ content:""; position:absolute; inset:0.6em; border:0.045em solid var(--gold2); }
+  /* 四隅の金飾り（左上を基準に各隅へ反転配置） */
+  .cert .corner{ position:absolute; width:8.5%; aspect-ratio:1; }
+  .cert .corner.tl{ left:2.7%; top:2.7%; }
+  .cert .corner.tr{ right:2.7%; top:2.7%; transform:scaleX(-1); }
+  .cert .corner.bl{ left:2.7%; bottom:2.7%; transform:scaleY(-1); }
+  .cert .corner.br{ right:2.7%; bottom:2.7%; transform:scale(-1,-1); }
   .cert .body{ position:absolute; display:flex; z-index:1; }
-  /* 文字の基本色（墨＋金枠に映える濃色）。賞状は色テーマでなく1デザイン */
-  .cert .c-title{ color:#352a20; font-weight:800; line-height:1.12; }
-  .cert .c-name{ color:#1c241d; font-weight:800; }
-  .cert .c-body{ color:#39332b; word-break:keep-all; line-break:strict; overflow-wrap:break-word; }
-  .cert .c-date, .cert .c-issuer{ color:#4a4033; }
+  /* 表題下の仕切り線 */
+  .cert .c-divider{ width:36%; height:1em; color:var(--gold); }
+  .cert .c-title{ color:#231f1b; font-weight:800; line-height:1.12; }
+  .cert .c-name{ color:#1a1815; font-weight:800; }
+  .cert .c-body{ color:#33302b; word-break:keep-all; line-break:strict; overflow-wrap:break-word; }
+  .cert .c-date, .cert .c-issuer{ color:#46403a; }
   .cert .c-name .hon{ font-weight:700; color:#5b5142; }
-  .cert .blank{ display:inline-block; border-bottom:0.06em solid #6a5d49; }
+  .cert .blank{ display:inline-block; border-bottom:0.06em solid #8a7d63; }
 
   /* 賞状・よこ書き：表題＝上中央（月桂樹の間）→受者名→本文→年月日・贈者名 */
-  .cert.yoko .body{ inset:8% 16% 10.5% 16%; flex-direction:column; align-items:center; text-align:center; }
+  .cert.yoko .body{ inset:12% 17% 12% 17%; flex-direction:column; align-items:center; text-align:center; }
   .cert.yoko .c-title{ font-size:2.5em; letter-spacing:.16em; padding-left:.16em; margin:0; max-width:100%; }
+  .cert.yoko .c-divider{ margin:.35em 0 .1em; }
   .cert.yoko .c-cols{ display:flex; flex-direction:column; align-items:center; width:100%; flex:1; }
   .cert.yoko .c-name{ font-size:1.78em; letter-spacing:.06em; margin-top:.55em; }
   .cert.yoko .c-name .hon{ font-size:.5em; margin-left:.5em; letter-spacing:0; }
-  .cert.yoko .c-name .blank{ min-width:5em; }
+  .cert.yoko .c-name .nm{ display:inline-block; min-width:5.5em; padding:0 .45em .1em;
+    border-bottom:0.05em solid #8a7d63; text-align:center; }
   .cert.yoko .c-body{ font-size:.95em; line-height:1.95; margin-top:.7em; max-width:94%; }
   .cert.yoko .c-foot{ margin-top:auto; display:flex; flex-direction:column; align-items:center; gap:.22em; padding-top:.5em; }
   .cert.yoko .c-date{ font-size:.8em; }
@@ -118,17 +131,19 @@
   .cert.yoko .c-issuer .blank{ min-width:5em; }
 
   /* 賞状・たて書き：表題は上中央で横書き／その下に縦組みの列（右→左）を絶対配置で高さ確定 */
-  .cert.tate .body{ inset:8% 12% 9% 12%; display:block; }
+  .cert.tate .body{ inset:11% 13% 11% 13%; display:block; }
   .cert.tate .c-title{ position:absolute; top:0; left:50%; transform:translateX(-50%); white-space:nowrap;
     font-size:2.4em; letter-spacing:.16em; padding-left:.16em; }
-  .cert.tate .c-cols{ position:absolute; top:3em; left:0; right:0; bottom:0;
+  .cert.tate .c-divider{ position:absolute; top:2.7em; left:50%; transform:translateX(-50%); }
+  .cert.tate .c-cols{ position:absolute; top:4.4em; left:0; right:0; bottom:0;
     display:flex; flex-direction:row-reverse; align-items:flex-start; justify-content:center; gap:.9em; }
   .cert.tate .c-mid, .cert.tate .c-foot{ display:contents; }
   .cert.tate .c-name, .cert.tate .c-body,
   .cert.tate .c-date, .cert.tate .c-issuer{ writing-mode:vertical-rl; text-orientation:mixed; }
   .cert.tate .c-name{ white-space:nowrap; font-size:1.62em; letter-spacing:.12em; }
   .cert.tate .c-name .hon{ font-size:.5em; letter-spacing:0; }
-  .cert.tate .c-name .blank{ border-bottom:none; border-left:0.06em solid #6a5d49; min-height:4.5em; }
+  .cert.tate .c-name .nm{ display:inline-block; min-height:5.5em; padding:.45em .1em;
+    border-left:0.05em solid #8a7d63; text-align:center; }
   .cert.tate .c-body{ height:100%; font-size:.92em; line-height:2.25; letter-spacing:.1em; }
   .cert.tate .c-date{ align-self:flex-end; font-size:.82em; white-space:nowrap; }
   .cert.tate .c-date .blank{ border-bottom:none; border-left:0.06em solid #6a5d49; min-height:1.4em; }
@@ -329,6 +344,30 @@
   </div>
 </div>
 
+<!-- 賞状の装飾（金のコーナー飾り・仕切り線）をSVGシンボルで一度だけ定義し、各賞状から参照 -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+  <linearGradient id="goldgrad" x1="0" y1="0" x2="1" y2="1">
+    <stop offset="0" stop-color="#d8bd72"/><stop offset=".5" stop-color="#a07e30"/><stop offset="1" stop-color="#c9a44e"/>
+  </linearGradient>
+  <symbol id="ornCorner" viewBox="0 0 110 110">
+    <g fill="none" stroke="url(#goldgrad)" stroke-width="2.1" stroke-linecap="round">
+      <path d="M8 70 C8 33 33 8 70 8"/>
+      <path d="M8 50 C8 27 27 8 50 8" stroke-width="1.2"/>
+      <path d="M24 24 c9 -1 15 4 16 11 c1 -7 7 -12 15 -11"/>
+      <path d="M40 16 c0 0 6 5 6 12"/>
+      <path d="M16 40 c0 0 5 6 12 6"/>
+    </g>
+    <circle cx="13" cy="13" r="2.6" fill="url(#goldgrad)"/>
+  </symbol>
+  <symbol id="divider" viewBox="0 0 200 16">
+    <g stroke="url(#goldgrad)" stroke-width="1.4" fill="url(#goldgrad)">
+      <line x1="14" y1="8" x2="86" y2="8"/><line x1="114" y1="8" x2="186" y2="8"/>
+      <path d="M100 1.5 L106 8 100 14.5 94 8 Z" stroke="none"/>
+      <circle cx="88.5" cy="8" r="1.6" stroke="none"/><circle cx="111.5" cy="8" r="1.6" stroke="none"/>
+    </g>
+  </symbol>
+</defs></svg>
+
 <!-- 印刷専用：ここに全枚数を描画する -->
 <div id="printArea"></div>
 <style id="pagestyle"></style>
@@ -405,13 +444,19 @@ function certNode(d, rcp){
   let body = esc((d.body||"").replace(/\{なまえ\}/g, rcp.name)).replace(/\n/g,"<br>");
   if(tate){ name=FW(name); issuer=FW(issuer); date=FW(date); body=FW(body); }   // 縦書きは数字を全角で正立
   // 両対応：入力があれば文字、空欄なら手書き用の罫線
-  const nameHTML   = nameRaw   ? name   : blank;
+  // 受者名は常に記名罫（.nm）に載せる＝入力時は名前＋下罫、空欄は記入線
+  const nameHTML   = `<span class="nm">${nameRaw ? name : ""}</span>`;
   const issuerHTML = issuerRaw ? issuer : blank;
   const dateHTML   = dateRaw   ? date   : ('令和'+blank+'年'+blank+'月'+blank+'日');
   el.innerHTML = `
-    <img class="cert-bg" src="cert-sakura.jpg" alt="">
+    <div class="frame"></div>
+    <svg class="corner tl"><use href="#ornCorner"/></svg>
+    <svg class="corner tr"><use href="#ornCorner"/></svg>
+    <svg class="corner bl"><use href="#ornCorner"/></svg>
+    <svg class="corner br"><use href="#ornCorner"/></svg>
     <div class="body">
       <div class="c-title">${title}</div>
+      <svg class="c-divider"><use href="#divider"/></svg>
       <div class="c-cols">
         <div class="c-mid">
           <div class="c-name">${nameHTML}${hon?`<span class="hon">${hon}</span>`:""}</div>
@@ -448,11 +493,12 @@ function gcardNode(d, rcp){
 function sizeSheets(root, certW, cardW){
   root.querySelectorAll(".cert").forEach(el=>{
     const w = certW || el.clientWidth || el.offsetWidth; if(!w) return;
-    el.style.fontSize = (w / (el.classList.contains("tate") ? 34 : 28)) + "px";
+    const tate = el.classList.contains("tate");
+    el.style.fontSize = (w / (tate ? 34 : 28)) + "px";
     const tt = el.querySelector(".c-title");
     if(tt){
       tt.style.fontSize = "";
-      const maxW = w * 0.44;
+      const maxW = w * (tate ? 0.50 : 0.54);   // 中央が広いので表題は余裕を持って収める
       let fs = parseFloat(getComputedStyle(tt).fontSize), guard = 0;
       while(tt.scrollWidth > maxW && fs > 8 && guard++ < 50){ fs *= 0.94; tt.style.fontSize = fs + "px"; }
     }

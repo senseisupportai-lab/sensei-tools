@@ -1,0 +1,524 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="manifest" href="han.webmanifest">
+<meta name="theme-color" content="#7fb35a">
+<link rel="apple-touch-icon" href="icon-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="班・グループ分け">
+<title>班・グループ分けメーカー｜ニッチョク。</title>
+<meta name="description" content="クラスの名前を入れてボタンひとつで、なるべく均等に班・グループ分け。「この2人はべつの班に」の配慮、班長の自動指名、前回と違うメンバーにも対応。そのまま黒板に映す・印刷して掲示。名前はこの端末の中だけ。登録不要・無料。">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="ニッチョク。">
+<meta property="og:title" content="班・グループ分けメーカー｜ニッチョク。">
+<meta property="og:description" content="名前を入れてボタンひとつで、なるべく均等に班分け。「この2人はべつの班に」の配慮も、班長の自動指名も。黒板に映す・印刷して掲示。名前は端末の中だけ。登録不要・無料。">
+<meta property="og:url" content="https://senseisupportai-lab.github.io/sensei-tools/han.html">
+<meta property="og:image" content="https://senseisupportai-lab.github.io/sensei-tools/ogp.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:site" content="@sensei_support">
+<meta name="twitter:image" content="https://senseisupportai-lab.github.io/sensei-tools/ogp.png">
+<style>
+  * { box-sizing: border-box; }
+  body { font-family:"Hiragino Sans","Hiragino Kaku Gothic ProN","Yu Gothic","Noto Sans JP",sans-serif;
+    margin:0; background:linear-gradient(#f7faf3,#eef4e8); color:#2f3b2a; line-height:1.6; }
+  .wrap { max-width:1000px; margin:0 auto; padding:20px 16px 60px; }
+  h1 { font-size:24px; color:#3f6b27; margin:6px 0 2px; }
+  .sub { color:#6c8a52; font-size:13px; margin-bottom:18px; }
+  .hint { color:#8a9a7c; font-size:11.5px; font-weight:normal; }
+  label { display:block; font-weight:bold; color:#3f6b27; font-size:13px; margin-bottom:5px; }
+  textarea { width:100%; border:1.5px solid #cfe0bb; border-radius:8px; padding:8px 10px; font-size:13px;
+             font-family:inherit; resize:vertical; line-height:1.9; }
+  select{ border:1.5px solid #cfe0bb; border-radius:8px; padding:7px 9px; font-size:14px; font-family:inherit; background:#fff; color:#2f3b2a; }
+  input[type=number]{ width:64px; padding:6px 8px; border:1.5px solid #cfe0bb; border-radius:8px; font-size:16px; text-align:center; font-family:inherit; }
+
+  .step{ background:#fff; border:1.5px solid #dde7d0; border-radius:14px; padding:14px 18px; margin-bottom:14px; box-shadow:0 3px 10px rgba(90,138,60,.06); }
+  .steptitle{ font-size:17px; font-weight:bold; color:#3f6b27; display:flex; align-items:center; margin-bottom:10px; }
+  .stepnum{ display:inline-flex; width:28px; height:28px; background:#7fb35a; color:#fff; border-radius:50%;
+            align-items:center; justify-content:center; font-weight:bold; margin-right:10px; flex:0 0 auto; }
+
+  /* 分け方トグル */
+  .seg{ display:inline-flex; background:#eef6e4; border:1.5px solid #cfe3b8; border-radius:24px; padding:3px; gap:3px; }
+  .seg button{ border:none; background:transparent; color:#5a8a3c; font-weight:bold; font-size:14px; padding:8px 16px;
+               border-radius:20px; cursor:pointer; font-family:inherit; }
+  .seg button.on{ background:#7fb35a; color:#fff; box-shadow:0 2px 0 #5a8a3c; }
+  .amount{ display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin-top:12px; }
+  .amount .lead{ font-weight:bold; color:#3f6b27; font-size:15px; }
+  .amount .stepper{ display:inline-flex; align-items:center; gap:6px; }
+  .amount .stepper button{ width:34px; height:34px; border-radius:9px; border:1.5px solid #9cc473; background:#fff;
+        color:#5a8a3c; font-size:20px; font-weight:bold; cursor:pointer; line-height:1; }
+  #calc{ margin-top:12px; font-size:14.5px; color:#3f6b27; font-weight:bold; background:#eef6e4; border:1px solid #cfe3b8;
+         border-radius:10px; padding:9px 13px; }
+  #calc.warn{ color:#b9622a; background:#fff6ec; border-color:#f0d6b8; }
+
+  /* 名前づけ */
+  .radios{ display:flex; flex-wrap:wrap; gap:8px; margin-top:2px; }
+  .rchip{ display:inline-flex; align-items:center; gap:6px; background:#fbfdf8; border:1.5px solid #e6edda; color:#3f6b27;
+          border-radius:20px; padding:7px 13px; font-size:13.5px; font-weight:bold; cursor:pointer; user-select:none; }
+  .rchip input{ display:none; }
+  .rchip.on{ background:#7fb35a; border-color:#7fb35a; color:#fff; }
+
+  .ckbox{ display:inline-flex; align-items:center; gap:7px; margin:0 16px 8px 0; font-weight:normal; color:#2f3b2a; font-size:14px; cursor:pointer; }
+  .ckbox input{ width:17px; height:17px; }
+
+  /* はなすペア */
+  .pairrow{ display:flex; gap:7px; align-items:center; background:#fbfdf8; border:1px solid #e6edda; border-radius:10px;
+            padding:7px 9px; margin-bottom:7px; flex-wrap:wrap; }
+  .pairrow .amp{ color:#7a8a6b; font-weight:bold; }
+  .pairrow select{ flex:1; min-width:120px; }
+  .rm { background:#fff; border:1.5px solid #e0b4b4; color:#c0392b; border-radius:8px; padding:6px 11px; font-size:12px; cursor:pointer; }
+  .addbtn{ background:#fff; border:1.5px dashed #9cc473; color:#5a8a3c; border-radius:8px; padding:7px 14px; font-size:13px; cursor:pointer; margin-top:2px; }
+
+  .go { display:inline-flex; align-items:center; gap:8px; background:#7fb35a; color:#fff; border:none;
+        border-radius:30px; padding:12px 28px; font-size:17px; font-weight:bold; cursor:pointer; margin:4px 4px 0;
+        box-shadow:0 3px 0 #5a8a3c; transition:transform .05s; font-family:inherit; }
+  .go:active { transform:translateY(2px); box-shadow:0 1px 0 #5a8a3c; }
+  .go:disabled { background:#bcd0a6; box-shadow:0 3px 0 #a5bd8f; cursor:default; }
+  .ghost { background:#fff; color:#5a8a3c; border:1.5px solid #9cc473; box-shadow:none; padding:9px 18px; font-size:14px; }
+
+  #msg { font-size:13px; margin:12px 0 0; min-height:10px; white-space:pre-line; }
+  #msg.warn { color:#b9622a; background:#fff6ec; border:1px solid #f0d6b8; border-radius:10px; padding:10px 12px; }
+  #msg.ok { color:#3f6b27; font-weight:bold; }
+
+  /* 掲示ボード */
+  .boardwrap{ margin-top:14px; }
+  .boardhead{ text-align:center; background:#33402c; color:#f3f7ec; border-radius:10px; padding:10px;
+              font-weight:bold; letter-spacing:3px; font-size:17px; margin-bottom:14px; }
+  .board{ display:grid; grid-template-columns:repeat(auto-fill,minmax(220px,1fr)); gap:12px; }
+  .hancard{ background:#fff; border:1.5px solid #d7e8c5; border-radius:14px; padding:12px 14px;
+            box-shadow:0 2px 6px rgba(90,138,60,.10); }
+  .hhead{ display:flex; align-items:center; gap:8px; border-bottom:2px dashed #e0ebd2; padding-bottom:7px; margin-bottom:9px; }
+  .hhead .hemoji{ width:30px; height:30px; border-radius:50%; display:inline-flex; align-items:center; justify-content:center;
+            color:#fff; font-size:15px; font-weight:bold; flex:0 0 auto; }
+  .hhead .htitle{ font-size:17px; font-weight:bold; color:#33402c; }
+  .hhead .hn{ margin-left:auto; font-size:11px; color:#9bae86; font-weight:bold; }
+  .hmembers{ display:flex; flex-wrap:wrap; gap:6px; }
+  .mchip{ background:#eef6e4; border:1px solid #cfe3b8; color:#33402c; border-radius:20px; padding:4px 12px; font-size:14.5px; font-weight:bold; }
+  .mchip.leader{ background:#fff4d6; border-color:#eccf7a; color:#8a6a1a; }
+  .hancard.flick .mchip{ opacity:.35; transition:opacity .12s; }
+
+  .footer{ text-align:center; margin-top:34px; padding:16px; border-top:1px solid #e0e8d4; font-size:13px; color:#6c8a52; line-height:2; }
+  .footer a{ color:#3f6b27; font-weight:bold; text-decoration:none; }
+  .tagline{ font-size:13.5px; color:#5a8a3c; margin:2px 0 10px; }
+  .safe{ background:#eef6e4; border:1px solid #cfe3b8; border-radius:9px; padding:8px 11px; margin-top:10px;
+         font-size:12.5px; color:#3f6b27; line-height:1.7; }
+  .about{ max-width:540px; margin:0 auto 14px; text-align:left; background:#fbfdf8; border:1px solid #e6edda;
+          border-radius:10px; padding:11px 14px; font-size:12.5px; color:#5b6b50; line-height:1.95; }
+  .about b{ color:#3f6b27; }
+  .hero{ text-align:center; margin:4px 0 20px; }
+  .hero h1{ margin:6px 0 2px; }
+  .hero .tagline, .hero .sub{ margin-left:auto; margin-right:auto; max-width:560px; }
+  .xtop{ margin:5px 0 0; font-size:13px; }
+  .xtop a{ color:#3f6b27; text-decoration:none; font-weight:bold; }
+  .counter{ display:inline-block; margin:10px auto 0; font-size:13px; color:#3f6b27; background:#eef6e4;
+            border:1px solid #cfe3b8; border-radius:20px; padding:5px 14px; }
+  @media (max-width:600px){
+    .wrap{ padding:14px 10px 50px; }
+    .step{ padding:12px 13px; }
+    .board{ grid-template-columns:repeat(auto-fill,minmax(150px,1fr)); }
+  }
+  /* 印刷／掲示：入力UIを隠し、ボードだけ大きく１枚に */
+  @media print{
+    body{ background:#fff; }
+    .noprint{ display:none !important; }
+    .wrap{ max-width:none; padding:0; }
+    .boardhead{ background:#fff; color:#000; border:2px solid #000; letter-spacing:4px; }
+    .board{ grid-template-columns:repeat(2,1fr); gap:10px; }
+    .hancard{ box-shadow:none; border:1.5px solid #888; break-inside:avoid; }
+    .hhead .hemoji{ border:1.5px solid #555; color:#000 !important; background:#fff !important; }
+    .mchip{ background:#fff; border:1px solid #888; }
+    .mchip.leader{ background:#fff; border:1.5px solid #333; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <a class="noprint" href="https://senseisupportai-lab.github.io/sensei-tools/" style="display:inline-block;margin:0 0 8px;color:#5a8a3c;font-size:13px;font-weight:bold;text-decoration:none;">← ニッチョク。トップ</a>
+  <div class="hero noprint">
+    <h1>👥 班・グループ分けメーカー</h1>
+    <div class="tagline">名前を入れてボタンひとつ。なるべく均等に、公平に班分けします。</div>
+    <div class="sub">「この2人はべつの班に」の配慮も、班長ぎめも、前回と違うメンバーも。そのまま黒板に映す・印刷して掲示。もう一度押すと組み直します。</div>
+    <div class="xtop"><a href="https://x.com/sensei_support" target="_blank" rel="noopener">𝕏 @sensei_support（つくった人：たんく）</a></div>
+    <div id="counter" class="counter" style="display:none;"></div>
+  </div>
+
+  <div class="step noprint">
+    <div class="steptitle"><span class="stepnum">1</span>クラスの名前を入れる（1行に1人）</div>
+    <textarea id="names" rows="6">あおい
+はると
+ゆい
+そうた
+めい
+りく
+さくら
+かなで
+ゆうき
+ひなた
+こはく
+いつき
+ののか
+ひかる
+あさひ
+まなと
+ことね
+ゆずき</textarea>
+    <div id="countInfo" style="margin-top:6px; font-size:14px; color:#3f6b27; font-weight:bold;"></div>
+    <div class="hint" style="margin-top:2px;">※はじめはサンプルが入っています。自分のクラスに置きかえてね。</div>
+    <div class="safe">🔒 入力した名前は、この端末の中だけに保存されます。私たちのサーバーには送信されません。</div>
+    <div style="margin-top:11px; display:flex; gap:8px; flex-wrap:wrap; align-items:center;">
+      <button type="button" class="go ghost" id="meiboLoad" style="font-size:13px; padding:8px 15px; margin:0;">📋 名簿を読み込む</button>
+      <button type="button" class="go ghost" id="meiboSave" style="font-size:13px; padding:8px 15px; margin:0;">💾 この名前を名簿に保存</button>
+      <span id="meiboMsg" style="font-size:12.5px; font-weight:bold; color:#3f6b27;"></span>
+    </div>
+    <div class="hint" style="margin-top:5px;">📋 名簿は一度ほぞんすれば、<a href="meibo.html" style="color:#5a8a3c; font-weight:bold;">他の道具</a>でも使い回せます（この端末の中だけ）。</div>
+  </div>
+
+  <div class="step noprint">
+    <div class="steptitle"><span class="stepnum">2</span>分け方をきめる</div>
+    <div class="seg" id="modeSeg">
+      <button type="button" data-mode="groups" class="on">班の数できめる</button>
+      <button type="button" data-mode="size">1班の人数できめる</button>
+    </div>
+    <div class="amount">
+      <span class="lead" id="amountLabel">班の数</span>
+      <span class="stepper">
+        <button type="button" id="minus">−</button>
+        <input type="number" id="amount" value="5" min="1" max="99">
+        <button type="button" id="plus">＋</button>
+      </span>
+      <span class="lead" id="amountUnit">班</span>
+    </div>
+    <div id="calc"></div>
+    <div style="margin-top:14px;">
+      <label>班の名前のつけ方</label>
+      <div class="radios" id="naming">
+        <label class="rchip on"><input type="radio" name="naming" value="num" checked>1班・2班…</label>
+        <label class="rchip"><input type="radio" name="naming" value="alpha">A班・B班…</label>
+        <label class="rchip"><input type="radio" name="naming" value="color">いろの班</label>
+      </div>
+    </div>
+  </div>
+
+  <div class="step noprint">
+    <div class="steptitle"><span class="stepnum">3</span>配慮（任意）</div>
+    <div style="margin-bottom:4px;">
+      <label class="ckbox"><input type="checkbox" id="optLeader"> 各班に「班長」を1人ずつ決める</label>
+      <label class="ckbox"><input type="checkbox" id="optRotate" checked> 前回とちがうメンバーにする</label>
+    </div>
+    <div style="margin-top:8px;">
+      <label style="margin-bottom:7px;">この2人はべつの班に（相性など）</label>
+      <div id="pairs"></div>
+      <button class="addbtn" id="addPair">＋ はなすペアを足す</button>
+      <div class="hint" style="margin-top:6px;">むずかしい組み合わせのときは、できるだけ守るように分けます（どうしても無理なときはお知らせします）。</div>
+    </div>
+  </div>
+
+  <div class="step noprint" style="text-align:center;">
+    <button class="go" id="go">👥 班をきめる！</button>
+    <button class="go ghost" id="again" style="display:none;">🔄 もう一回</button>
+    <button class="go ghost" id="printBtn" style="display:none;">🖨 印刷・掲示</button>
+    <div id="msg"></div>
+  </div>
+
+  <div class="boardwrap" id="boardwrap" style="display:none;">
+    <div class="boardhead" id="boardhead">はん分けひょう</div>
+    <div class="board" id="board"></div>
+  </div>
+
+  <div class="footer noprint">
+    <div class="about">
+      <b>この道具について</b><br>
+      「班分けのたびに、くじを引かせたり名前を書き出したり…そのうえ“あの2人は離したい”まで気をつかう」のが大変で作りました。名前を入れてボタンを押すだけ。なるべく均等に、配慮も込みで分けます。名前はこの端末から出ません。<br>
+      作っているのは、学び続ける先生を応援したい「たんく」です。
+    </div>
+    「こんな道具が欲しい・ここを直して」は <a href="https://x.com/sensei_support" target="_blank" rel="noopener">𝕏 @sensei_support</a> へ🌱
+  </div>
+</div>
+
+<script>
+const $ = id => document.getElementById(id);
+const rosterNames = () => $("names").value.split("\n").map(s=>s.trim()).filter(Boolean);
+const shuffle = a => { for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; } return a; };
+
+const LS_KEY="sensei_han_v1";
+let mode="groups";          // "groups" | "size"
+let naming="num";
+let pairId=0;
+let lastGroups=null;        // 直近の班分け（名前配列の配列）
+
+const COLORS=[
+  ["あか","#e05a4e"],["あお","#4e7fe0"],["きいろ","#e0b23a"],["みどり","#4ea85a"],
+  ["むらさき","#9b5ce0"],["だいだい","#e0813a"],["みずいろ","#3ab4d0"],["ピンク","#e06aa0"],
+  ["きみどり","#8ab53a"],["こん","#3a4e9b"],["ちゃ","#9b6b3a"],["はいいろ","#7a8a80"]
+];
+function hanName(i){
+  if(naming==="alpha") return String.fromCharCode(65+i)+"班";
+  if(naming==="color") return (COLORS[i]?COLORS[i][0]:"班"+(i+1))+"班";
+  return (i+1)+"班";
+}
+function hanColor(i){
+  if(naming==="color" && COLORS[i]) return COLORS[i][1];
+  const p=["#7fb35a","#4e7fe0","#e0813a","#9b5ce0","#e05a4e","#3ab4d0","#8ab53a","#e0b23a","#e06aa0","#3a4e9b","#4ea85a","#9b6b3a"];
+  return p[i%p.length];
+}
+function hanBadge(i){
+  if(naming==="alpha") return String.fromCharCode(65+i);
+  if(naming==="color") return "●";
+  return (i+1);
+}
+
+/* ===== クラス名簿（全ツール共通・この端末の中だけ） ===== */
+const MEIBO_KEY="sensei_meibo_v1";
+function loadMeibo(){ try{ const o=JSON.parse(localStorage.getItem(MEIBO_KEY)); return (o&&Array.isArray(o.names))?o:null; }catch(e){ return null; } }
+function saveMeibo(names){ try{ localStorage.setItem(MEIBO_KEY, JSON.stringify({names, updatedAt:Date.now()})); return true; }catch(e){ return false; } }
+function meiboFlash(t,warn){ const el=$("meiboMsg"); el.textContent=t; el.style.color=warn?"#b9622a":"#3f6b27"; }
+$("meiboLoad").onclick=()=>{
+  const m=loadMeibo();
+  if(!m||!m.names.length){ meiboFlash("まだ名簿がありません。名前を入れて「名簿に保存」か、名簿ページで登録してね。",true); return; }
+  $("names").value=m.names.join("\n");
+  onNamesChange();
+  meiboFlash("名簿（"+m.names.length+"人）を読み込みました🌱");
+};
+$("meiboSave").onclick=()=>{
+  const names=rosterNames();
+  if(!names.length){ meiboFlash("先に名前を入れてね。",true); return; }
+  saveMeibo(names);
+  meiboFlash("名簿（"+names.length+"人）を保存しました🌱 他の道具でも使えます。");
+};
+
+/* ===== 分け方の計算プレビュー ===== */
+function groupPlan(){
+  const N=rosterNames().length;
+  let A=parseInt($("amount").value,10); if(!(A>=1)) A=1;
+  let G;
+  if(mode==="groups") G=Math.min(A,Math.max(1,N||1));
+  else G=Math.max(1,Math.ceil((N||1)/A));       // size指定：1班A人になるべく近づく班数
+  G=Math.max(1,G);
+  // 均等なサイズ配分
+  const base=Math.floor(N/G), rem=N%G;
+  const sizes=[]; for(let i=0;i<G;i++) sizes.push(base+(i<rem?1:0));
+  return {N,G,sizes,base,rem};
+}
+function updateCalc(){
+  const {N,G,sizes,base,rem}=groupPlan();
+  const el=$("calc");
+  if(!N){ el.className="warn"; el.textContent="まず名前を入れてね（1行に1人）。"; return; }
+  el.className="";
+  const min=Math.min(...sizes), max=Math.max(...sizes);
+  let sizeTxt = (min===max) ? `どの班も ${min}人` : `${min}〜${max}人（${rem}つの班が${max}人、のこりが${min}人）`;
+  el.textContent = `${N}人 → ${G}班　（${sizeTxt}）`;
+}
+function updateCount(){
+  const N=rosterNames().length;
+  $("countInfo").textContent = N ? `→ いま ${N}人` : "";
+}
+
+/* ===== 分け方トグル ===== */
+$("modeSeg").querySelectorAll("button").forEach(b=>{
+  b.onclick=()=>{
+    mode=b.dataset.mode;
+    $("modeSeg").querySelectorAll("button").forEach(x=>x.classList.toggle("on",x===b));
+    if(mode==="groups"){ $("amountLabel").textContent="班の数"; $("amountUnit").textContent="班"; $("amount").value=5; }
+    else { $("amountLabel").textContent="1班の人数"; $("amountUnit").textContent="人ずつ"; $("amount").value=4; }
+    updateCalc(); persist();
+  };
+});
+$("plus").onclick=()=>{ $("amount").value=Math.min(99,(parseInt($("amount").value,10)||1)+1); updateCalc(); persist(); };
+$("minus").onclick=()=>{ $("amount").value=Math.max(1,(parseInt($("amount").value,10)||1)-1); updateCalc(); persist(); };
+$("amount").addEventListener("input", ()=>{ updateCalc(); persist(); });
+
+/* ===== 名前づけラジオ ===== */
+$("naming").querySelectorAll("input").forEach(r=>{
+  r.onchange=()=>{
+    naming=r.value;
+    $("naming").querySelectorAll(".rchip").forEach(l=>l.classList.toggle("on", l.querySelector("input").checked));
+    if(lastGroups) renderBoard(lastGroups,false);
+    persist();
+  };
+});
+
+/* ===== はなすペア ===== */
+function optionsHtml(sel){
+  const opts=['<option value="">（えらぶ）</option>'];
+  rosterNames().forEach(n=>{ opts.push(`<option value="${n.replace(/"/g,'&quot;')}"${n===sel?' selected':''}>${n}</option>`); });
+  return opts.join("");
+}
+function addPair(a,b){
+  const id=++pairId;
+  const row=document.createElement("div");
+  row.className="pairrow"; row.dataset.id=id;
+  row.innerHTML=`<select class="pa">${optionsHtml(a)}</select><span class="amp">と</span><select class="pb">${optionsHtml(b)}</select><button type="button" class="rm">はずす</button>`;
+  row.querySelector(".rm").onclick=()=>{ row.remove(); persist(); };
+  row.querySelectorAll("select").forEach(s=>s.onchange=persist);
+  $("pairs").appendChild(row);
+}
+function getPairs(){
+  const set=new Set(rosterNames());
+  const out=[];
+  $("pairs").querySelectorAll(".pairrow").forEach(r=>{
+    const a=r.querySelector(".pa").value, b=r.querySelector(".pb").value;
+    if(a&&b&&a!==b&&set.has(a)&&set.has(b)) out.push([a,b]);
+  });
+  return out;
+}
+function refreshPairOptions(){
+  $("pairs").querySelectorAll(".pairrow").forEach(r=>{
+    const pa=r.querySelector(".pa"), pb=r.querySelector(".pb");
+    const va=pa.value, vb=pb.value;
+    pa.innerHTML=optionsHtml(va); pb.innerHTML=optionsHtml(vb);
+  });
+}
+$("addPair").onclick=()=>{ addPair(); persist(); };
+
+/* 名前が変わったら：カウント・計算・ペア候補を更新 */
+function onNamesChange(){ updateCount(); updateCalc(); refreshPairOptions(); persist(); }
+$("names").addEventListener("input", onNamesChange);
+
+/* ===== 班分け本体（配慮つき） ===== */
+function fill(shuffled,sizes){
+  const groups=[]; let k=0;
+  for(const s of sizes){ groups.push(shuffled.slice(k,k+s)); k+=s; }
+  return groups;
+}
+function scoreOf(groups, sepPairs, avoidSet){
+  let score=0;
+  for(const g of groups){
+    for(let i=0;i<g.length;i++) for(let j=i+1;j<g.length;j++){
+      // はなすペアが同じ班 → 重いペナルティ
+      for(const [a,b] of sepPairs){ if((g[i]===a&&g[j]===b)||(g[i]===b&&g[j]===a)) score+=1000; }
+      // 前回いっしょだったペア → 軽いペナルティ
+      if(avoidSet.has(g[i]+" "+g[j]) || avoidSet.has(g[j]+" "+g[i])) score+=1;
+    }
+  }
+  return score;
+}
+function solve(names, sizes, sepPairs, avoidSet){
+  let best=null, bestScore=Infinity;
+  const tries=600;
+  for(let t=0;t<tries;t++){
+    const groups=fill(shuffle(names.slice()), sizes);
+    const s=scoreOf(groups, sepPairs, avoidSet);
+    if(s<bestScore){ bestScore=s; best=groups; if(s===0) break; }
+  }
+  return {groups:best, score:bestScore};
+}
+function pairKeySet(groups){
+  const set=new Set();
+  for(const g of groups) for(let i=0;i<g.length;i++) for(let j=i+1;j<g.length;j++) set.add(g[i]+" "+g[j]);
+  return set;
+}
+
+let busy=false;
+function run(animate){
+  const names=rosterNames();
+  const msg=$("msg");
+  if(names.length<2){ msg.className="warn"; msg.textContent="名前を2人以上入れてね（1行に1人）。"; return; }
+  const {G,sizes}=groupPlan();
+  const sepPairs=getPairs();
+  const avoidSet=($("optRotate").checked && lastGroups) ? pairKeySet(lastGroups) : new Set();
+
+  const {groups,score}=solve(names, sizes, sepPairs, avoidSet);
+
+  // メッセージ
+  const sepFail=Math.floor(score/1000);
+  if(sepFail>0){ msg.className="warn"; msg.textContent=`※ ${sepFail}組は、人数の都合でどうしても同じ班になりました。設定を見直すか、もう一回お試しください。`; }
+  else if(sepPairs.length){ msg.className="ok"; msg.textContent="「べつの班に」の配慮も守って分けました🌱"; }
+  else { msg.className="ok"; msg.textContent="分けました🌱 「もう一回」で組み直せます。"; }
+
+  lastGroups=groups;
+  renderBoard(groups, animate);
+  $("again").style.display=""; $("printBtn").style.display="";
+  persist();
+}
+
+function renderBoard(groups, animate){
+  const board=$("board");
+  board.innerHTML="";
+  const withLeader=$("optLeader").checked;
+  groups.forEach((g,i)=>{
+    const card=document.createElement("div");
+    card.className="hancard"+(animate?" flick":"");
+    const badge=hanBadge(i), col=hanColor(i);
+    const leaderIdx = (withLeader && g.length) ? 0 : -1;   // シャッフル済み先頭を班長に
+    const chips=g.map((n,idx)=>{
+      const isL=idx===leaderIdx;
+      return `<span class="mchip${isL?' leader':''}">${isL?'⭐ ':''}${escapeHtml(n)}</span>`;
+    }).join("");
+    card.innerHTML=`<div class="hhead">
+        <span class="hemoji" style="background:${col}">${badge}</span>
+        <span class="htitle">${escapeHtml(hanName(i))}</span>
+        <span class="hn">${g.length}人</span>
+      </div><div class="hmembers">${chips}</div>`;
+    board.appendChild(card);
+  });
+  $("boardwrap").style.display="";
+  $("boardhead").textContent = `はん分けひょう　（${groups.length}班・${rosterNames().length}人）`;
+  if(animate){
+    requestAnimationFrame(()=>{ setTimeout(()=>board.querySelectorAll(".hancard").forEach(c=>c.classList.remove("flick")),140); });
+  }
+}
+function escapeHtml(s){ return String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c])); }
+
+$("go").onclick=()=>run(true);
+$("again").onclick=()=>run(true);
+$("printBtn").onclick=()=>window.print();
+
+/* ===== 保存・復元 ===== */
+function persist(){
+  try{
+    const pairs=[];
+    $("pairs").querySelectorAll(".pairrow").forEach(r=>pairs.push([r.querySelector(".pa").value, r.querySelector(".pb").value]));
+    localStorage.setItem(LS_KEY, JSON.stringify({
+      names:$("names").value, mode, amount:$("amount").value, naming,
+      leader:$("optLeader").checked, rotate:$("optRotate").checked, pairs, lastGroups
+    }));
+  }catch(e){}
+}
+function restore(){
+  let s=null; try{ s=JSON.parse(localStorage.getItem(LS_KEY)); }catch(e){}
+  if(!s) return false;
+  if(typeof s.names==="string" && s.names.trim()) $("names").value=s.names;
+  mode=s.mode==="size"?"size":"groups";
+  $("modeSeg").querySelectorAll("button").forEach(x=>x.classList.toggle("on",x.dataset.mode===mode));
+  $("amountLabel").textContent = mode==="groups"?"班の数":"1班の人数";
+  $("amountUnit").textContent = mode==="groups"?"班":"人ずつ";
+  if(s.amount) $("amount").value=s.amount;
+  naming = ["num","alpha","color"].includes(s.naming)?s.naming:"num";
+  $("naming").querySelectorAll("input").forEach(r=>{ r.checked=(r.value===naming); });
+  $("naming").querySelectorAll(".rchip").forEach(l=>l.classList.toggle("on", l.querySelector("input").checked));
+  $("optLeader").checked=!!s.leader;
+  if(typeof s.rotate==="boolean") $("optRotate").checked=s.rotate;
+  (s.pairs||[]).forEach(p=>{ if(Array.isArray(p)) addPair(p[0],p[1]); });
+  if(Array.isArray(s.lastGroups)) lastGroups=s.lastGroups;
+  return true;
+}
+
+/* ---- 起動 ---- */
+(function init(){
+  restore();
+  updateCount(); updateCalc();
+  if(lastGroups && lastGroups.length){ renderBoard(lastGroups,false); $("again").style.display=""; $("printBtn").style.display=""; }
+})();
+
+/* 来訪カウンター：送るのは「アクセスがあった」事実のみ（入力データは一切送らない） */
+(function(){
+  const NS="senseisupportai-lab", KEY="han";
+  const counted = localStorage.getItem("han_counted")==="1";
+  fetch("https://abacus.jasoncameron.dev/"+(counted?"get":"hit")+"/"+NS+"/"+KEY)
+    .then(r=>r.json()).then(d=>{
+      if(typeof d.value==="number"){
+        const el=$("counter");
+        el.textContent="🌱 これまでに "+d.value.toLocaleString("ja-JP")+" 人の先生が使いました";
+        el.style.display="inline-block";
+        localStorage.setItem("han_counted","1");
+      }
+    }).catch(()=>{});
+})();
+/* Service Worker：表示の高速化＆保険として静かに登録するだけ */
+if("serviceWorker" in navigator){ window.addEventListener("load",()=>navigator.serviceWorker.register("sw.js").catch(()=>{})); }
+</script>
+</body>
+</html>

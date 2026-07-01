@@ -59,8 +59,12 @@
   .pickbar .selnum{ font-size:12.5px; color:#3f6b27; font-weight:bold; }
   .minibtn{ background:#fff; color:#5a8a3c; border:1.5px solid #9cc473; border-radius:18px; padding:5px 12px; font-size:12.5px; font-weight:bold; cursor:pointer; }
   .minibtn:active{ transform:translateY(1px); }
-  .kpick{ display:flex; flex-wrap:wrap; gap:5px; padding:2px; }
-  .kchip{ width:34px; height:34px; display:flex; align-items:center; justify-content:center; font-size:18px;
+  .pickdir{ font-size:11.5px; color:#3f6b27; font-weight:bold; background:#eef6e4; border:1px solid #cfe3b8;
+            border-radius:6px; padding:3px 9px; display:inline-block; margin-bottom:8px; }
+  /* チップは 右上→下→左の列（教科書順の縦並び） */
+  .kpick{ display:grid; grid-auto-flow:column; grid-template-rows:repeat(10, auto); direction:rtl;
+          justify-content:start; gap:5px; padding:2px; overflow-x:auto; }
+  .kchip{ direction:ltr; width:34px; height:34px; display:flex; align-items:center; justify-content:center; font-size:18px;
           border:1.5px solid #d7e3c6; border-radius:7px; background:#fbfdf8; color:#9bb088; cursor:pointer; user-select:none; }
   .kchip.on{ background:#eaf5dd; color:#2f3b2a; border-color:#7fb35a; }
 
@@ -78,28 +82,35 @@
   .ckbox{ display:inline-flex; align-items:center; gap:6px; margin:0 18px 8px 0; font-weight:normal; color:#2f3b2a; font-size:14px; cursor:pointer; }
   .ckbox input{ width:16px; height:16px; }
 
-  /* ===== プリント本体（A4横・縦書き） ===== */
-  .sheet{ background:#fff; border:1px solid #d7e8c5; border-radius:10px; padding:22px 26px 26px; margin-top:10px;
-          box-shadow:0 3px 12px rgba(90,138,60,.10); }
-  .sheet-head{ display:flex; justify-content:space-between; align-items:flex-end; border-bottom:2.5px solid #2f3b2a; padding-bottom:8px; margin-bottom:8px; gap:12px; flex-wrap:wrap; }
+  /* ===== プリント本体（A4横の固定キャンバス・縦書き列組み） ===== */
+  .sheetwrap{ margin-top:10px; overflow:hidden; }
+  .sheet{ width:277mm; height:190mm; background:#fff; border:1px solid #d7e8c5; border-radius:10px;
+          box-shadow:0 3px 12px rgba(90,138,60,.10); padding:8mm 9mm; transform-origin:top left;
+          display:flex; flex-direction:column; }
+  .sheet-head{ display:flex; justify-content:space-between; align-items:flex-end; border-bottom:2.5px solid #2f3b2a; padding-bottom:8px; margin-bottom:6px; gap:12px; flex-wrap:wrap; flex:0 0 auto; }
   .sheet-title{ font-size:20px; font-weight:bold; color:#1f2a1a; }
   .sheet-title small{ font-weight:normal; font-size:12px; color:#6c8a52; margin-left:8px; }
   .sheet-meta{ display:flex; gap:18px; font-size:13px; color:#333; }
   .sheet-meta b{ font-weight:bold; }
   .uline{ display:inline-block; border-bottom:1.4px solid #555; min-width:88px; height:18px; vertical-align:bottom; }
   .uline.score{ min-width:64px; }
-  .sheet-inst{ font-size:13px; color:#3f6b27; margin-bottom:14px; }
+  .sheet-inst{ display:flex; justify-content:space-between; align-items:center; gap:12px; font-size:13px; color:#3f6b27; margin-bottom:8px; flex:0 0 auto; }
+  .sheet-dir{ color:#3f6b27; font-size:12px; font-weight:bold; background:#eef6e4; border:1px solid #cfe3b8;
+              border-radius:6px; padding:3px 9px; white-space:nowrap; }
 
-  /* 右→左へ、各問は縦に積む */
-  .klist{ display:flex; flex-direction:row-reverse; flex-wrap:wrap; justify-content:flex-start;
-          align-content:flex-start; gap:10px 4px; }
-  .kitem{ display:flex; flex-direction:column; align-items:center; width:62px; padding:4px 2px 6px;
-          break-inside:avoid; }
-  .kno{ font-size:12px; color:#7a8a6b; font-weight:bold; margin-bottom:4px; }
-  .vch{ font-size:22px; color:#1f2a1a; line-height:1.16; text-align:center; }
+  /* 問題エリア：A4内に自動フィット（見切れさせない） */
+  .klistbox{ flex:1 1 auto; min-height:0; position:relative; display:flex; align-items:center; justify-content:center; overflow:hidden; }
+  /* 列は右→左、各列は上→下 */
+  /* 番号は 上の行を右→左（①は右上、その左が②）、つぎの行へ */
+  .klist{ display:grid; grid-auto-flow:row; direction:rtl; justify-content:center; align-content:center;
+          gap:12px 6px; transform-origin:center center; }
+  /* 右側にふりがなの場所を確保（どの列でも枠外に切れないように） */
+  .kitem{ direction:ltr; display:flex; flex-direction:column; align-items:center; padding:0 19px 0 5px; }
+  .kno{ font-size:12px; color:#7a8a6b; font-weight:bold; margin-bottom:3px; }
+  .vch{ font-size:20px; color:#1f2a1a; line-height:1.1; text-align:center; }
   .vsp{ height:8px; }
   .kcell{ position:relative; margin:2px 0; }
-  .kbox{ width:44px; height:44px; border:1.7px solid #2f3b2a; border-radius:4px; position:relative;
+  .kbox{ width:44px; height:44px; border:1.7px solid #2f3b2a; border-radius:0; position:relative;
          display:flex; align-items:center; justify-content:center; background:#fff; }
   .kbox::before, .kbox::after{ content:""; position:absolute; background:#cfe0bb; }
   .kbox::before{ left:0; right:0; top:50%; height:1px; transform:translateY(-.5px); }
@@ -128,15 +139,15 @@
   @media (max-width:600px){
     .wrap{ padding:14px 10px 50px; }
     .step{ padding:12px 13px; }
-    .sheet{ padding:16px 12px; }
   }
-  /* ===== 印刷時：A4横 ===== */
+  /* ===== 印刷時：必ず1枚のA4横で固定 ===== */
   @media print{
-    body{ background:#fff; }
+    html,body{ background:#fff; height:auto; }
     .wrap{ max-width:none; padding:0; }
     .noprint{ display:none !important; }
-    .sheet{ border:none; box-shadow:none; border-radius:0; padding:4mm 3mm; margin:0; }
-    .klist{ gap:12px 6px; }
+    .sheetwrap{ overflow:visible !important; height:auto !important; margin:0 !important; }
+    /* 画面用の縮小を解除し、A4横サイズそのままで1枚に */
+    .sheet{ transform:none !important; border:none; box-shadow:none; border-radius:0; margin:0; }
     @page{ size:A4 landscape; margin:10mm; }
   }
 </style>
@@ -161,11 +172,22 @@
     <summary id="picksummary">習った漢字をえらぶ（いまは全部）</summary>
     <div class="advbody">
       <div class="pickbar">
+        <label style="margin:0;">並び順</label>
+        <select id="pub">
+          <option value="aiueo">あいうえお順（標準）</option>
+          <option value="mitsumura">光村図書の教科書順</option>
+          <option value="tokyo">東京書籍の教科書順</option>
+          <option value="kyoiku">教育出版の教科書順</option>
+        </select>
+        <span id="rangewrap">｜ はじめから <input type="number" id="rangeN" min="0" style="width:60px;"> 字を <button class="minibtn" id="applyRange">えらぶ</button></span>
+      </div>
+      <div class="pickbar">
         <span class="selnum" id="selnum"></span>
         <button class="minibtn" id="selAll">全部えらぶ</button>
         <button class="minibtn" id="selNone">全部はずす</button>
-        <span class="hint">タップで オン／オフ。クラスで習ったところまで選べば、その範囲だけ出ます。設定はこの端末に保存されます。</span>
+        <span class="hint" id="pubhint">タップで オン／オフ。教科書順をえらべば、習った順に並びます。「はじめから◯字」で、習ったところまでを一括選択。設定はこの端末に保存されます。</span>
       </div>
+      <div class="pickdir">並び順：右上から下へ → つぎは左の列へ（番号の若い字が右上）</div>
       <div class="kpick" id="kpick"></div>
     </div>
   </details>
@@ -250,14 +272,48 @@ const KANJI = {
   ]
 };
 
+const ORDERS = {
+  mitsumura:{
+    1:"木大小一二三四五六七八九十子空先生男女手天青文字正見学校山水雨上下日火田川竹月車人気糸目玉村白土音花休虫金本森出中町入赤耳王口年立草名夕百円千犬早貝林右足石左力",
+    2:"読雪声言行南図書方絵知春思記曜肉話聞黄色黒太毛高風晴多新考形体長近同今会社刀切内店姉妹線汽海魚広前元岩食教光家池組後数丸点買引羽雲夏公園通万頭来鳥歌分回直紙遠友朝顔毎当間昼半電外楽親父母兄弟午夜科国語算活工自時帰何合里週番画用角交明星東京古寺西止道野原台船米秋作理少谷細首鳴心冬戸麦茶地市場答歩才門弓矢計室馬北牛走売弱強",
+    3:"詩葉習着登物持旅始進動深様面館号調使問意味湖漢由温酒題発章平決事落相洋服次所県有氷秒農仕球局全遊表昔世界速横指鉄安定運予送住具拾向坂悲緑開岸路感対区陽整部泳練助童申品商客式去倍筆銀植集化死都両負係員祭業板柱油港薬笛注悪者勝庫波放勉想写真列血暗橋暑寒軽命第返主州屋根荷守役豆育消取期畑終福急起苦待談鼻歯央階委級昭和駅皮皿短息美転病医飲重配度幸流族帳代曲投炭羊宿丁宮院礼等反君乗庭研究打受島追実神箱湯他身",
+    4:"信達飛席建菜標例法類機械司典順録辞成訓印静愛昨城初景群必要的府茨栃埼奈潟富井梨量岐阜岡伝案説試選観旗利材関以季節郡戦争給飯包帯泣軍兵隊輪健康夫氏祝貨児器官良徒競芽梅約付清滋阪徳香媛佐賀崎熊鹿沖縄熱働栄養満令位置漁浴欠卒単結果径副臣街灯英参唱塩治刷変末種続折積松不議差念固便博浅倉札孫功加牧借挙協極求未芸各料然仲労焼冷照好最省課無側改周害共連願望失辺低敗老底票陸管衣完験別残希努束巣産候察特兆億鏡散民覚勇笑",
+    5:"像経情象絶厚賞状喜解容技術適許可複構桜銅破修復眼停祖準備貿易際潔質報告属確識因造似限留現接応勢河歴史幹招句常序武士資査性非総測舎往演刊肥製謝罪暴防鉱績志航夢編険断境態逆判圧得比政興示張個支迷在独弁検提寄余仏貸効条件保評価賛妻混雑略採禁能過程豊布減護再増証責任統酸素設授紀財脈織築旧規則貯型液基額故婦救格職移墓義殺貧版述仮飼綿居永久毒営犯講師精慣囲益災枝費税制衛耕損粉均輸団務快燃率領導堂",
+    6:"視砂腹段並降認洗異純射背捨舌乱域誌映拡展蔵訪我承蒸処就臨従恩裁律脳臓腸肺胃私密呼吸存刻激簡机難疑券障派警署銭勤諸供収納枚染宣暮探座幼著権尊庁装届沿冊宇宙俳誤幕晩模窓延論樹覧値源退厳優推貴策縮棒熟尺寸揮痛批傷若閉遺翌縦頂忠誠敵蚕己除仁泉裏系盟欲株善班危割否至宅糖紅卵乳創奏誕困看筋盛骨巻宝郷敬秘聖絹拝鋼亡干衆郵賃孝預穀俵訳忘暖詞朗胸片劇将皇后陛憲党閣革宗垂層磁操補担姿討専潮針穴灰奮済"
+  },
+  tokyo:{
+    1:"一二三四五六七八九十山木川目月上下中大入犬小白出力見先生気日火水金土花文音町字人休車本学校手赤青名立口耳女子男年村早足右左田千百円貝糸林石玉王正雨草森天竹虫夕空",
+    2:"風元読言光話丸声行分記書方作点線画数聞何考夜間多少毛当時活科来門回高黄色外国地前野原頭答牛場会思今社親友明計算組家自心教園知体長太肉同合楽雪顔食歩走止弟妹万切才語台絵広図工北近引後形内海新強鳴雲晴船店冬朝週市茶春角夏秋東南西父母兄姉昼紙室売買道米歌戸曜午谷岩池鳥馬首番魚電細通汽刀弓矢直里寺黒弱遠古半公理用毎帰羽京麦交星",
+    3:"葉起速面向緑感豆物様仕練習州央横倍館事号使意味漢表調柱所取局配住身育守決動持問題部筆者都氷泳有返遊開全始係世終苦族章曲板品皿委員発島寒相死君安急橋登血申由想詩集次暑業実農命写助落進役負勝区県丁屋根投球打主化鉄真客着送院皮受消荷運陽路昔服両軽具温度美短整指植研究深代乗飲流炭平和銀鼻神祭歯医坂薬箱湯他対洋湖酒油拾羊駅港界期勉級式列予談反注暗悪岸放幸悲商昭帳庫転第福等定宮宿追庭旅息階重畑去礼待秒病童笛波",
+    4:"器倉巣覚働失包例案続変伝借求録努然類法料別参加芽司辞典成説連順訓種便利治観察験好飛関博結果機量熱清漁害材完約束席位笑特焼競初旗最健康達功敗望共英末愛候折的必要印刷選願付協積夫以議標群郡官管富徒浴街灯挙票卒貨沖戦争給飯帯泣軍兵隊輪景浅底散児衣置差節単栄養塩無産省照祝試熊鹿残不冷低満未老良陸改城辺菜井松側念縄固賀静周孫梅季札唱岡府億兆令建希梨芸茨欠仲徳径鏡牧各氏労極昨副臣課械香民勇信潟岐阜栃埼奈滋阪媛佐崎",
+    5:"確現個複絶句夢久情像増益境義衛眼救停応資在査報得際質移総容険属士混災因興過性構接示禁雑酸独快識潔比河精版勢織紀永志歴史喜賛職任仏招状殺態仮断判測条常均件故政編刊象基修適序解減格額貸貧準墓祖迷述損造寄非防毒責破枝師圧営価制肥旧逆統粉輸技術支型再限効保護妻往復耕講罪燃提賞桜銅貿易規則率領張導略飼弁堂婦綿留犯液程武似製能証豊囲団経幹慣検築鉱脈航費績設居厚暴許可謝採評授備舎演税余素財貯布告務",
+    6:"簡筋窓枚宣幼革裏並視痛敬敵降姿胸吸呼忘閉朗創補拝郵就仁俵紅縮尺班域展郷映覧異熟賃盟警署蚕善臨宇宙欲穀遺乳樹蔵宗刻恩推存暮供系誤傷厳論段胃腸肺脳臓舌私危策卵割洗机誕砂糖暖若巻訳背片処誌詞誠忠亡担値激疑障俳探沿届株看座盛券専模純勤潮骨棒穴層奮延銭鋼批操困収捨装源律従済著権冊腹縦納秘密派泉訪絹除宅蒸聖針宝灰優乱染預退寸射磁皇后陛党閣庁裁憲己翌頂至劇奏揮衆承将否認尊難我貴諸孝干晩幕垂討拡"
+  },
+  kyoiku:{
+    1:"山日月火木一二三字上下人川子口田四五六七八九十見文白車手大土水名出早金正花虫青空目百耳音立年千力天中気小本竹糸左右生先休赤林夕雨男女円学校草玉村入石犬王町森貝足",
+    2:"書記活曜朝友通色思今声何言読公園聞話汽星同回画会線数点馬方工羽春道高近地自分外形黄国前絵図作週間答昼夜親兄父母姉弟妹万語算海内夏考太丸心切行場楽才合時元組新牛鳥市弓毛電矢古門光頭野体半長顔紙谷岩強弱細科室理知北魚秋冬広食帰東西南少家角当戸首茶引毎遠後教交多晴社歩売計肉船台買店原来風雪米歌止池里寺麦京番雲走直用鳴明刀午黒",
+    3:"開返事動物乗登主橋岸発予想調葉表由温漢意味号重問練習感運転集実消化面泳身守第次死度流研究秒昭和館章全題皮相庭命炭品平皿等代着客待持具取旅様悲部屋遊駅曲仕写真礼安商員区申送所丁住打飲負暑暗洋服育苦薬助向幸終速者寒央陽氷有植緑祭湯豆式世界注進指役港箱深病院都反対整受級横童談柱業倍投球宿勉放両追落鼻起神歯医坂血他銀油係農湖美詩短昔筆急根決使委始帳列局笛宮定庫島路荷県板階州鉄期羊族配畑軽勝酒君福去拾悪息波",
+    4:"信初達変席菜笑香梅周順関印浴加努芽完富英量法最約験観察種類別念単位照然産芸辞典治成訓径兆臣城奈塩省刷良孫愛必要伝課害機械折説参衣景辺以飯案児貨未満令冷静官束各府茨栃群埼潟井梨岐阜岡滋賀阪兵徳媛佐崎熊鹿沖縄末結置残失借季節果的給栄養老固働希望唱挙覚戦争飛焼包帯泣勇軍隊輪旗牧不議博欠散続松側巣連録料陸極仲司願共試協選灯民副夫札材無管功漁億例昨街徒特利労器祝清低便付改差票郡健康浅氏候敗好標積倉競熱建卒求底鏡",
+    5:"常永慣現混状態迷士謝情報容編確構囲解災技術資快識際逆象価非像織証属比職応質統減述経示序故歴史精任勢貸許責適程複移厚飼率領夢喜険導能略救弁堂貯雑殺句得増準備効可性評防犯罪営造修仮耕綿布損豊久毒提支採保護河基規制設限条件接張師枝似演貧築政税賞興因武眼財額紀燃粉断寄判往衛過潔境査航停貿易婦酸講再旧績均志測暴検製復授刊個破素独益義圧居型液禁賛絶告総桜仏妻舎鉱銅脈輸則肥版留墓幹団務祖在費余招格",
+    6:"背筋幼裏奮磁降暮灰暖私将熟並諸貴棒奏賃層己退郵遺処蒸策乱模券縦異危存除蔵糖域呼脳割捨拡宣郷補皇陛后党純権孝厳傷論討難簡俳垂源姿針樹預警署勤我操裁臨若洗映片巻砂穴探晩干穀至恩舌射座欲届訪班痛装視宇宙誤収冊推段窓染看胸派敵腹激銭困忘絹俵株骨蚕沿宅疑善専閣縮頂庁枚泉批詞誌創忠誠延済紅盛秘密展否亡宗系仁聖尺肺臓律衆胃腸誕敬担閉承拝尊刻優吸就値憲納盟革揮卵寸鋼供幕訳机翌認潮障宝著従劇乳朗覧"
+  }
+};
+
 const GMETA = [
   {key:1, note:"80字"}, {key:2, note:"160字"}, {key:3, note:"200字"},
   {key:4, note:"202字"}, {key:5, note:"193字"}, {key:6, note:"191字"}
 ];
 let curGrade = 3;
+let curPub = "aiueo";  // 並び順：aiueo / mitsumura / tokyo / kyoiku
 let sel = {};          // grade -> Set(選択中の漢字)
 const SEL_LS = "kanji_sel_v2";
 const LS = "kanji_v2";
+
+/* 表示順（チップの並び・「はじめから◯字」の基準）。教科書順をえらべばその指導順。 */
+function displayOrder(g){
+  if(curPub!=="aiueo" && ORDERS[curPub] && ORDERS[curPub][g]) return [...ORDERS[curPub][g]];
+  return KANJI[g].map(e=>e[0]); // あいうえお順（配当表順）
+}
 
 function loadSel(){ try{ return JSON.parse(localStorage.getItem(SEL_LS))||{}; }catch(e){ return {}; } }
 function saveSel(){
@@ -289,8 +345,7 @@ function markGrade(){ document.querySelectorAll(".grade").forEach(e=>e.classList
 function renderPick(){
   const box=$("kpick"); box.innerHTML="";
   const s=selSet(curGrade);
-  KANJI[curGrade].forEach(e=>{
-    const c=e[0];
+  displayOrder(curGrade).forEach(c=>{
     const chip=document.createElement("div");
     chip.className="kchip"+(s.has(c)?" on":"");
     chip.textContent=c;
@@ -335,7 +390,7 @@ function build(){
   const n=parseInt($("count").value)||20;
   const list=pickProblems(pool, n);
 
-  const sheet=$("sheet"); sheet.innerHTML="";
+  const sheet=$("sheet"); sheet.className="sheetwrap"; sheet.innerHTML="";
   const wrap=document.createElement("div"); wrap.className="sheet";
   const range = s.size===KANJI[curGrade].length ? `${curGrade}年` : `${curGrade}年（えらんだ${s.size}字）`;
   wrap.innerHTML=`
@@ -346,14 +401,46 @@ function build(){
         <span><b>てん</b> <span class="uline score"></span></span>
       </div>
     </div>
-    <div class="sheet-inst">よみを見て、□に漢字を書きましょう。</div>`;
+    <div class="sheet-inst"><span>よみを見て、□に漢字を書きましょう。</span></div>`;
+  const box=document.createElement("div"); box.className="klistbox";
   const grid=document.createElement("div"); grid.className="klist";
   list.forEach((e,i)=>grid.appendChild(renderItem(e,i)));
-  wrap.appendChild(grid);
+  box.appendChild(grid); wrap.appendChild(box);
   sheet.appendChild(wrap);
+  fitKlistAuto(grid, box);
+  fitSheet();
   $("toolbar").style.display="block";
   persist();
 }
+
+/* 問題グリッドを、いちばん大きく表示できる行数でA4内におさめる（見切れず・文字を最大化） */
+function fitKlistAuto(grid, box){
+  grid.style.transform="none";
+  const bw=box.clientWidth, bh=box.clientHeight;
+  const n=grid.children.length;
+  if(!bw||!bh||!n) return;
+  let best={s:0, C:2};
+  const maxC=Math.min(20, n);
+  for(let C=2; C<=maxC; C++){
+    grid.style.gridTemplateColumns=`repeat(${C}, auto)`;
+    const w=grid.offsetWidth, h=grid.offsetHeight;
+    if(!w||!h) continue;
+    const s=Math.min(bw/w, bh/h);   // その列数での拡大率
+    if(s>best.s) best={s, C};       // いちばん大きく出せる列数を採用
+  }
+  grid.style.gridTemplateColumns=`repeat(${best.C}, auto)`;
+  grid.style.transform="scale("+Math.min(best.s, 1.9)+")";  // 拡大しすぎ防止
+}
+
+/* 画面では A4横キャンバスを横幅にあわせて縮小表示（印刷時は等倍A4） */
+function fitSheet(){
+  const wrap=$("sheet"); const sh=wrap.querySelector(".sheet"); if(!sh) return;
+  sh.style.transform="none";
+  const s=Math.min(1, wrap.clientWidth / sh.offsetWidth);
+  sh.style.transform="scale("+s+")";
+  wrap.style.height=(sh.offsetHeight*s)+"px";
+}
+window.addEventListener("resize", fitSheet);
 
 /* ---- 印刷 ---- */
 function printWith(showAns){
@@ -366,7 +453,7 @@ function printWith(showAns){
 
 /* ---- 保存（端末内のみ） ---- */
 function persist(){
-  try{ localStorage.setItem(LS, JSON.stringify({ grade:curGrade, count:$("count").value, title:$("title").value })); }catch(e){}
+  try{ localStorage.setItem(LS, JSON.stringify({ grade:curGrade, count:$("count").value, title:$("title").value, pub:curPub })); }catch(e){}
 }
 function restore(){
   let s; try{ s=JSON.parse(localStorage.getItem(LS)); }catch(e){}
@@ -374,12 +461,22 @@ function restore(){
   if(s.grade && KANJI[s.grade]) curGrade=s.grade;
   if(s.count!=null) $("count").value=s.count;
   if(s.title!=null) $("title").value=s.title;
+  if(s.pub && ["aiueo","mitsumura","tokyo","kyoiku"].includes(s.pub)) curPub=s.pub;
 }
 
 /* ---- 初期化 ---- */
 restore();
+$("pub").value=curPub;
 buildGrades();
 renderPick();
+$("pub").onchange=()=>{ curPub=$("pub").value; persist(); renderPick(); };
+$("applyRange").onclick=()=>{
+  const ord=displayOrder(curGrade);
+  let n=parseInt($("rangeN").value);
+  if(isNaN(n)){ $("msg").textContent="「はじめから◯字」に数を入れてください。"; return; }
+  n=Math.max(0, Math.min(n, ord.length));
+  sel[curGrade]=new Set(ord.slice(0,n)); saveSel(); renderPick(); $("msg").textContent="";
+};
 $("selAll").onclick=()=>{ sel[curGrade]=new Set(KANJI[curGrade].map(e=>e[0])); saveSel(); renderPick(); };
 $("selNone").onclick=()=>{ sel[curGrade]=new Set(); saveSel(); renderPick(); };
 $("make").onclick=build;
