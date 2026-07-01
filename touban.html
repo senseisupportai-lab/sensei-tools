@@ -94,6 +94,11 @@
   .jmembers{ display:flex; flex-wrap:wrap; gap:6px; }
   .mchip{ background:#eef6e4; border:1px solid #cfe3b8; color:#33402c; border-radius:20px; padding:4px 12px; font-size:14px; font-weight:bold; }
   .mchip.empty{ background:#f3f3ee; border-style:dashed; color:#b9c4ac; font-weight:normal; }
+  .mchip.gf{ background:#fde3ee; border-color:#f3aacb; color:#b5397a; }
+  .mchip.gm{ background:#e0edfb; border-color:#a8cbf0; color:#2e6bb0; }
+  .jratio{ margin-left:auto; font-size:12px; font-weight:bold; color:#7a8a6b; white-space:nowrap; }
+  .jratio .rf{ color:#b5397a; } .jratio .rm{ color:#2e6bb0; }
+  .jhead .jratio + .jn{ margin-left:8px; }
   .jobcard.flick .mchip{ opacity:.5; }
 
   .footer{ text-align:center; margin-top:34px; padding:16px; border-top:1px solid #e0e8d4; font-size:13px; color:#6c8a52; line-height:2; }
@@ -124,7 +129,8 @@
     .boardhead{ background:#fff; color:#000; border:2px solid #000; letter-spacing:4px; }
     .board{ grid-template-columns:repeat(2,1fr); gap:10px; }
     .jobcard{ box-shadow:none; border:1.5px solid #888; break-inside:avoid; }
-    .mchip{ background:#fff; border:1px solid #888; }
+    .mchip, .mchip.gf, .mchip.gm{ background:#fff; border:1px solid #888; color:#000; }  /* 掲示に男女を出さない */
+    .jratio{ display:none !important; }
   }
 </style>
 </head>
@@ -210,6 +216,11 @@
 
   <div class="boardwrap" id="boardwrap" style="display:none;">
     <div class="boardhead" id="boardhead">係・当番ひょう</div>
+    <div id="genderView" class="noprint" style="display:none; text-align:center; margin:0 0 12px;">
+      <label class="ckbox" style="margin:0;"><input type="checkbox" id="optGenderView"> ♀♂ 男女比を表示</label>
+      <span id="genderViewCount" style="color:#7a8a6b; font-weight:bold; font-size:13px; margin-left:6px;"></span>
+      <div class="hint" style="margin-top:3px;"><span style="background:#fde3ee;border:1px solid #f3aacb;color:#b5397a;border-radius:10px;padding:1px 7px;">♀</span> <span style="background:#e0edfb;border:1px solid #a8cbf0;color:#2e6bb0;border-radius:10px;padding:1px 7px;">♂</span>　この画面だけの確認用です（印刷・掲示には出ません）</div>
+    </div>
     <div class="board" id="board"></div>
   </div>
 
@@ -328,6 +339,7 @@ function buildGenderChips(){
   const f=Object.values(genderMap).filter(x=>x==="f").length;
   const m=Object.values(genderMap).filter(x=>x==="m").length;
   $("genderInfo").textContent = (f||m) ? `♀${f}人・♂${m}人・未設定${names.length-f-m}人` : "";
+  refreshGenderView();
 }
 
 /* ---- わりあてロジック：負荷が低い人から選ぶ＝自然に全員1つ→均等 ---- */
@@ -389,24 +401,42 @@ function generate(names, jobs, opts, prev, gmap, sameGroups){
 
 /* ---- 掲示ボード描画 ---- */
 function renderBoard(result, flicker){
+  const showG = !flicker && $("optGenderView") && $("optGenderView").checked && Object.keys(genderMap).length>0;
   const board=$("board"); board.innerHTML="";
   result.res.forEach(job=>{
     const card=document.createElement("div"); card.className="jobcard"+(flicker?" flick":"");
     const head=document.createElement("div"); head.className="jhead";
     const em=document.createElement("span"); em.className="jemoji"; em.textContent=job.emoji||"🌱";
     const ti=document.createElement("span"); ti.className="jtitle"; ti.textContent=job.name;
+    head.append(em,ti);
+    if(showG){                                   // 男女比バッジ（画面だけ）
+      const f=job.members.filter(n=>genderMap[n]==="f").length;
+      const m=job.members.filter(n=>genderMap[n]==="m").length;
+      const u=job.members.length-f-m;
+      const rt=document.createElement("span"); rt.className="jratio";
+      rt.innerHTML=`<span class="rf">♀${f}</span> <span class="rm">♂${m}</span>`+(u?` <span>・?${u}</span>`:"");
+      head.append(rt);
+    }
     const jn=document.createElement("span"); jn.className="jn"; jn.textContent=job.count+"人";
-    head.append(em,ti,jn);
+    head.append(jn);
     const mem=document.createElement("div"); mem.className="jmembers";
     for(let i=0;i<job.count;i++){
-      const ch=document.createElement("span");
-      if(job.members[i]){ ch.className="mchip"; ch.textContent=job.members[i]; }
+      const ch=document.createElement("span"); const nm=job.members[i];
+      if(nm){ ch.className="mchip"+(showG&&genderMap[nm]==="f"?" gf":showG&&genderMap[nm]==="m"?" gm":""); ch.textContent=nm; }
       else { ch.className="mchip empty"; ch.textContent="ぼしゅう"; }
       mem.appendChild(ch);
     }
     card.append(head,mem); board.appendChild(card);
   });
   $("boardwrap").style.display="block";
+}
+/* 男女比トグルの表示ON/OFF（登録があるときだけ出す） */
+function refreshGenderView(){
+  const has=Object.keys(genderMap).length>0;
+  const ctl=$("genderView"); if(ctl) ctl.style.display = has ? "block" : "none";
+  const f=Object.values(genderMap).filter(x=>x==="f").length;
+  const m=Object.values(genderMap).filter(x=>x==="m").length;
+  const el=$("genderViewCount"); if(el) el.textContent = has ? `（クラス全体：♀${f}人・♂${m}人）` : "";
 }
 /* シャッフル中の見せかけ（人をランダムに入れ替えるだけ） */
 function fakeResult(jobs,names){
@@ -460,7 +490,7 @@ const LS_KEY="touban_v1";
 function snapshotInputs(){
   return { v:1, names:$("names").value, jobs:readJobs(),
     rotate:$("optRotate").checked, noDouble:$("optNoDouble").checked, balance:$("optBalance").checked,
-    gender:genderMap, same:readSameGroups() };
+    genderView:$("optGenderView").checked, gender:genderMap, same:readSameGroups() };
 }
 function persist(){ if(restoring) return; try{
   localStorage.setItem(LS_KEY, JSON.stringify({...snapshotInputs(), result:lastResult, prev:prevAssignment}));
@@ -471,6 +501,7 @@ function applyState(s){
   if(typeof s.rotate==="boolean") $("optRotate").checked=s.rotate;
   if(typeof s.noDouble==="boolean") $("optNoDouble").checked=s.noDouble;
   if(typeof s.balance==="boolean") $("optBalance").checked=s.balance;
+  if(typeof s.genderView==="boolean") $("optGenderView").checked=s.genderView;
   $("jobs").innerHTML=""; (s.jobs&&s.jobs.length?s.jobs:[]).forEach(j=>addJob(j.emoji,j.name,j.count));
   genderMap=s.gender||{};
   $("sameGroups").innerHTML=""; (s.same||[]).forEach(g=>addSameGroup(g));
@@ -507,6 +538,7 @@ document.addEventListener("input", persist);
 document.addEventListener("change", persist);
 $("addJob").onclick=()=>addJob("🌱","",1);
 $("addSame").onclick=()=>addSameGroup();
+$("optGenderView").addEventListener("change", ()=>{ if(lastResult&&lastResult.res) renderBoard({res:lastResult.res}, false); });
 $("go").onclick=()=>{ userDecided=true; run(); };
 $("again").onclick=()=>{ userDecided=true; run(); };
 $("printBtn").onclick=()=>{ if(!lastResult||!lastResult.res){ alert("先に「きめる！」を押してね。"); return; } window.print(); };
