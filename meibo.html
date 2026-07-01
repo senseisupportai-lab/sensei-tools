@@ -56,6 +56,32 @@
   .gchip.f{ background:#fde3ee; border-color:#f3aacb; color:#b5397a; }
   .gchip.m{ background:#e0edfb; border-color:#a8cbf0; color:#2e6bb0; }
 
+  /* 1行＝1児童 */
+  .rhead{ display:flex; align-items:center; gap:7px; font-size:11.5px; color:#9bae86; font-weight:bold; padding:0 2px 4px; }
+  .rhead .hname{ flex:1; }
+  .rhead .hg{ flex:0 0 auto; width:76px; text-align:center; }
+  .rhead .hd{ flex:0 0 auto; width:30px; }
+  .rhead .hnum{ flex:0 0 auto; width:24px; }
+  .rlist{ display:flex; flex-direction:column; gap:6px; }
+  .rrow{ display:flex; align-items:center; gap:7px; }
+  .rrow .rnum{ flex:0 0 auto; width:24px; text-align:right; color:#9bae86; font-size:12px; font-weight:bold; }
+  .rrow .rname{ flex:1; min-width:0; border:1.5px solid #cfe0bb; border-radius:8px; padding:8px 10px; font-size:15px; font-family:inherit; }
+  .rrow .rname:focus{ outline:none; border-color:#7fb35a; }
+  .gsel{ display:flex; gap:4px; flex:0 0 auto; }
+  .gbtn{ width:36px; height:36px; border-radius:9px; border:1.5px solid #cfe0bb; background:#fff; cursor:pointer;
+         font-size:15px; font-weight:bold; color:#b3bfa5; display:flex; align-items:center; justify-content:center; }
+  .gbtn.f.on{ background:#fde3ee; border-color:#f3aacb; color:#b5397a; }
+  .gbtn.m.on{ background:#e0edfb; border-color:#a8cbf0; color:#2e6bb0; }
+  .rdel{ flex:0 0 auto; width:30px; height:30px; border-radius:8px; border:1.5px solid #e7d3d3; background:#fff; color:#c98b8b; cursor:pointer; font-size:15px; line-height:1; }
+  .rdel:hover{ border-color:#e0b4b4; color:#c0392b; }
+  .addrow{ background:#fff; border:1.5px dashed #9cc473; color:#5a8a3c; border-radius:10px; padding:9px 16px; font-size:14px; cursor:pointer; margin-top:10px; font-family:inherit; }
+  details.bulk{ margin-top:12px; }
+  details.bulk>summary{ cursor:pointer; color:#5a8a3c; font-weight:bold; font-size:13px; list-style:none; }
+  details.bulk>summary::-webkit-details-marker{ display:none; }
+  details.bulk>summary::before{ content:"▶ "; font-size:10px; }
+  details.bulk[open]>summary::before{ content:"▼ "; }
+  details.bulk textarea{ width:100%; border:1.5px solid #cfe0bb; border-radius:8px; padding:9px 11px; font-size:14px; font-family:inherit; resize:vertical; margin-top:8px; line-height:1.8; }
+
   .uses{ display:grid; grid-template-columns:repeat(auto-fill,minmax(200px,1fr)); gap:10px; margin-top:4px; }
   .usecard{ display:flex; align-items:center; gap:10px; text-decoration:none; background:#fbfdf8; border:1.5px solid #e6edda;
             border-radius:12px; padding:11px 13px; color:#2f3b2a; transition:transform .1s, border-color .1s; }
@@ -91,19 +117,26 @@
   </div>
 
   <div class="step">
-    <div class="steptitle"><span class="stepnum">1</span>名前を入れる（1行に1人）</div>
-    <textarea id="names" rows="12" placeholder="あおい
+    <div class="steptitle"><span class="stepnum">1</span>児童を1人ずつ入れる</div>
+    <div class="hint" style="margin-bottom:8px;">1行に1人。名前のとなりで男女もえらべます（任意）。♀→もう一度おすと解除。<b>Enterキー</b>で次の行へ。</div>
+    <div class="rhead">
+      <span class="hnum"></span><span class="hname">なまえ</span><span class="hg">男女（任意）</span><span class="hd"></span>
+    </div>
+    <div class="rlist" id="rows"></div>
+    <button type="button" class="addrow" id="addRow">＋ 児童を追加</button>
+
+    <details class="bulk">
+      <summary>まとめて貼り付け（名前を一気に入力）</summary>
+      <textarea id="bulk" rows="6" placeholder="あおい
 はると
 ゆい
-…"></textarea>
-    <div id="countInfo" style="margin-top:6px; font-size:14px; color:#3f6b27; font-weight:bold;"></div>
-    <div class="hint" style="margin-top:2px;">※出席番号順でも、名前だけでも、ニックネームでもOK。あとから自由に直せます。</div>
-    <div class="safe">🔒 入力した名前は、この端末の中だけに保存されます。私たちのサーバーには送信されません。</div>
+…（1行に1人で貼り付け）"></textarea>
+      <button type="button" class="go ghost" id="bulkApply" style="font-size:13px; margin-top:8px;">この名前で行をつくる</button>
+      <div class="hint" style="margin-top:4px;">※今ある行は置きかわります。同じ名前の男女は引き継ぎます。</div>
+    </details>
 
-    <label>男女を登録する（任意）<span class="hint" style="font-weight:normal;">　名前をタップで ♀ → ♂ → 未設定。係・当番や班分けの「男女を均等に」で使えます。</span></label>
-    <div class="gchips" id="genderChips"></div>
-    <div id="genderInfo" style="margin-top:6px; font-size:12.5px; color:#7a8a6b; font-weight:bold;"></div>
-    <div class="hint" style="margin-top:3px;">※男女もこの端末の中だけ。掲示物や他の人に見える形にはなりません。</div>
+    <div id="countInfo" style="margin-top:10px; font-size:14px; color:#3f6b27; font-weight:bold;"></div>
+    <div class="safe">🔒 名前も男女も、この端末の中だけに保存されます。私たちのサーバーには送信されません。掲示物や他の人に見える形にはなりません。</div>
   </div>
 
   <div class="step">
@@ -144,7 +177,32 @@
 
 <script>
 const $ = id => document.getElementById(id);
-const rosterNames = () => $("names").value.split("\n").map(s=>s.trim()).filter(Boolean);
+
+/* 1行＝1児童。名前とその場の男女をセットで扱うので取り違えが起きない */
+function makeRow(name, g){
+  const row=document.createElement("div"); row.className="rrow"; row.dataset.g="";
+  const num=document.createElement("span"); num.className="rnum";
+  const inp=document.createElement("input"); inp.type="text"; inp.className="rname"; inp.placeholder="名前"; inp.value=name||"";
+  const sel=document.createElement("div"); sel.className="gsel";
+  const bf=document.createElement("button"); bf.type="button"; bf.className="gbtn f"; bf.textContent="♀"; bf.title="女子";
+  const bm=document.createElement("button"); bm.type="button"; bm.className="gbtn m"; bm.textContent="♂"; bm.title="男子";
+  function setG(v){ row.dataset.g=v||""; bf.classList.toggle("on",v==="f"); bm.classList.toggle("on",v==="m"); }
+  bf.onclick=()=>{ setG(row.dataset.g==="f"?"":"f"); updateCount(); };
+  bm.onclick=()=>{ setG(row.dataset.g==="m"?"":"m"); updateCount(); };
+  sel.append(bf,bm);
+  const del=document.createElement("button"); del.type="button"; del.className="rdel"; del.textContent="×"; del.title="この行を消す";
+  del.onclick=()=>{ row.remove(); renumber(); updateCount(); };
+  inp.addEventListener("input", updateCount);
+  inp.addEventListener("keydown", e=>{ if(e.key==="Enter"){ e.preventDefault(); addRow("","",true); } });
+  row.append(num,inp,sel,del);
+  setG(g);
+  return row;
+}
+function addRow(name,g,focus){ const r=makeRow(name,g); $("rows").appendChild(r); renumber(); if(focus) r.querySelector(".rname").focus(); return r; }
+function renumber(){ [...$("rows").children].forEach((r,i)=>{ const n=r.querySelector(".rnum"); if(n) n.textContent=(i+1); }); }
+function rowsData(){ return [...$("rows").querySelectorAll(".rrow")].map(r=>({ name:r.querySelector(".rname").value.trim(), g:r.dataset.g||"" })).filter(x=>x.name); }
+function rosterNames(){ return rowsData().map(x=>x.name); }
+function currentGenderMap(){ const m={}; rowsData().forEach(x=>{ if(x.g) m[x.name]=x.g; }); return m; }
 
 /* ===== クラス名簿（全ツール共通・この端末の中だけ） ===== */
 const MEIBO_KEY="sensei_meibo_v1";
@@ -155,29 +213,10 @@ const GENDER_KEY="sensei_gender_v1";
 function loadGender(){ try{ const o=JSON.parse(localStorage.getItem(GENDER_KEY)); return (o&&o.gender&&typeof o.gender==="object")?o.gender:{}; }catch(e){ return {}; } }
 function saveGender(map){ try{ localStorage.setItem(GENDER_KEY, JSON.stringify({gender:map, updatedAt:Date.now()})); }catch(e){} }
 
-let genderMap={};   // {名前:"f"|"m"}
-function buildGenderChips(){
-  const names=rosterNames();
-  Object.keys(genderMap).forEach(n=>{ if(!names.includes(n)) delete genderMap[n]; });
-  const box=$("genderChips"); box.innerHTML="";
-  names.forEach(n=>{
-    const g=genderMap[n];
-    const c=document.createElement("div");
-    c.className="gchip"+(g==="f"?" f":g==="m"?" m":"");
-    c.textContent=n+(g==="f"?" ♀":g==="m"?" ♂":" ・");
-    c.onclick=()=>{ const cur=genderMap[n];
-      if(!cur) genderMap[n]="f"; else if(cur==="f") genderMap[n]="m"; else delete genderMap[n];
-      buildGenderChips(); };
-    box.appendChild(c);
-  });
-  const f=Object.values(genderMap).filter(x=>x==="f").length;
-  const m=Object.values(genderMap).filter(x=>x==="m").length;
-  $("genderInfo").textContent = (f||m) ? `♀${f}人・♂${m}人・未設定${names.length-f-m}人` : "";
-}
-
 function updateCount(){
-  const N=rosterNames().length;
-  $("countInfo").textContent = N ? `→ いま ${N}人` : "";
+  const d=rowsData();
+  const N=d.length, f=d.filter(x=>x.g==="f").length, m=d.filter(x=>x.g==="m").length;
+  $("countInfo").textContent = N ? `→ いま ${N}人`+((f||m)?`（♀${f}人・♂${m}人・未設定${N-f-m}人）`:"") : "";
 }
 function fmtDate(ms){
   try{ const d=new Date(ms); return `${d.getFullYear()}年${d.getMonth()+1}月${d.getDate()}日 ${String(d.getHours()).padStart(2,"0")}:${String(d.getMinutes()).padStart(2,"0")}`; }
@@ -190,27 +229,38 @@ function showSaved(){
   else { msg.className=""; msg.textContent=""; }
 }
 
-$("names").addEventListener("input", ()=>{ updateCount(); buildGenderChips(); });
+$("addRow").onclick=()=>addRow("","",true);
+$("bulkApply").onclick=()=>{
+  const lines=$("bulk").value.split("\n").map(s=>s.trim()).filter(Boolean);
+  if(!lines.length){ return; }
+  const prevG=currentGenderMap();          // 既存の男女を同じ名前で引き継ぐ
+  $("rows").innerHTML="";
+  lines.forEach(n=>addRow(n, prevG[n]||""));
+  $("bulk").value=""; $("bulk").closest("details").open=false;
+  renumber(); updateCount();
+};
 
 $("saveBtn").onclick=()=>{
-  const names=rosterNames();
+  const d=rowsData();
+  const names=d.map(x=>x.name);
   const msg=$("msg");
-  if(!names.length){ msg.className="warn"; msg.textContent="まず名前を入れてね（1行に1人）。"; return; }
-  saveMeibo(names); saveGender(genderMap);
-  const g=Object.keys(genderMap).filter(n=>names.includes(n)).length;
-  msg.className="ok"; msg.textContent=`名簿（${names.length}人${g?`・男女${g}人`:""}）を保存しました🌱 席替え・係当番・班分けで「📋 名簿を読み込む」から使えます。`;
+  if(!names.length){ msg.className="warn"; msg.textContent="まず児童を1人以上入れてね。"; return; }
+  const dup=[...new Set(names.filter((n,i)=>names.indexOf(n)!==i))];
+  saveMeibo(names); saveGender(currentGenderMap());
+  const g=d.filter(x=>x.g).length;
+  if(dup.length){ msg.className="warn"; msg.textContent=`保存しました（${names.length}人）。ただし同じ名前が重複しています：${dup.join("・")}\n他の道具で取り違えないよう、区別できる名前にするのがおすすめです。`; }
+  else { msg.className="ok"; msg.textContent=`名簿（${names.length}人${g?`・男女${g}人`:""}）を保存しました🌱 席替え・係当番・班分けで「📋 名簿を読み込む」から使えます。`; }
 };
 $("clearBtn").onclick=()=>{
   if(!loadMeibo()){ $("msg").className=""; $("msg").textContent="まだ保存された名簿はありません。"; return; }
-  if(!confirm("保存した名簿と男女を消します。よろしいですか？（入力欄の名前の文字は残ります）")) return;
+  if(!confirm("保存した名簿と男女を消します。よろしいですか？（入力中の行はそのまま残ります）")) return;
   try{ localStorage.removeItem(MEIBO_KEY); localStorage.removeItem(GENDER_KEY); }catch(e){}
-  genderMap={}; buildGenderChips();
   $("msg").className=""; $("msg").textContent="名簿を消しました。";
 };
 
 /* ---- 控え（書き出し／読み込み） ---- */
 $("exportBtn").onclick=()=>{
-  const data=JSON.stringify({v:1, names:rosterNames(), gender:genderMap}, null, 2);
+  const data=JSON.stringify({v:1, names:rosterNames(), gender:currentGenderMap()}, null, 2);
   const url=URL.createObjectURL(new Blob([data],{type:"application/json"}));
   const a=document.createElement("a"); a.href=url; a.download="クラス名簿.json"; a.click();
   setTimeout(()=>URL.revokeObjectURL(url),1000);
@@ -221,20 +271,20 @@ $("importFile").addEventListener("change", e=>{
   if(!f) return;
   const r=new FileReader();
   r.onload=()=>{ try{ const o=JSON.parse(r.result); const ns=Array.isArray(o.names)?o.names:[];
-    $("names").value=ns.join("\n");
-    if(o.gender && typeof o.gender==="object") genderMap={...o.gender};
-    updateCount(); buildGenderChips();
+    const g=(o.gender && typeof o.gender==="object")?o.gender:{};
+    $("rows").innerHTML=""; ns.forEach(n=>addRow(n, g[n]||"")); renumber(); updateCount();
     alert("控えから戻しました🌱 「💾 この名簿を保存」を押すと反映されます。"); }
     catch(err){ alert("ファイルを読めませんでした。"); } };
   r.readAsText(f);
 });
 
-/* ---- 起動：保存ずみの名簿があれば入力欄にも反映 ---- */
+/* ---- 起動：保存ずみの名簿があれば行にして表示。無ければ空行を数行 ---- */
 (function init(){
-  const m=loadMeibo();
-  if(m && m.names.length){ $("names").value=m.names.join("\n"); }
-  genderMap=loadGender();
-  updateCount(); buildGenderChips(); showSaved();
+  const m=loadMeibo(); const g=loadGender();
+  $("rows").innerHTML="";
+  if(m && m.names.length){ m.names.forEach(n=>addRow(n, g[n]||"")); }
+  else { for(let i=0;i<5;i++) addRow("",""); }
+  renumber(); updateCount(); showSaved();
 })();
 
 /* 来訪カウンター：送るのは「アクセスがあった」事実のみ（入力データは一切送らない） */
