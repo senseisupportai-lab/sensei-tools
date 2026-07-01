@@ -175,6 +175,10 @@
   <details class="adv">
     <summary>こだわり条件をつける（任意）　― 離したい子・前にしたい子 ―</summary>
     <div class="advbody">
+      <div id="mixGenderWrap" style="display:none; margin-bottom:14px; padding-bottom:12px; border-bottom:1px dashed #dde7d0;">
+        <label class="ckbox"><input type="checkbox" id="optMixGender"> ♀♂ 男女をとなり同士にする（男女こうご）</label>
+        <div class="hint" style="margin-top:2px;">クラス名簿の男女を使って、左右のとなりがなるべく男女になるように並べます。（人数の関係で完全にできない時は近づけます）</div>
+      </div>
       <label>離し方 <span class="hint">（チェックした位置を避けます。複数えらべます）</span></label>
       <div style="margin-bottom:14px;">
         <label class="ckbox"><input type="checkbox" id="avLR" checked> となり（左右）</label>
@@ -221,7 +225,8 @@
 
   <div id="genderCtl" style="display:none; text-align:center; margin:2px 0 12px;">
     <label class="ckbox" style="margin:0;"><input type="checkbox" id="optGender" checked> ♀♂ 男女で色分け</label>
-    <span class="hint" style="margin-left:8px;"><span style="background:#fde3ee;border:1px solid #f3aacb;color:#b5397a;border-radius:10px;padding:1px 7px;">♀</span> <span style="background:#e0edfb;border:1px solid #a8cbf0;color:#2e6bb0;border-radius:10px;padding:1px 7px;">♂</span>　男女は<a href="meibo.html" style="color:#5a8a3c;font-weight:bold;">クラス名簿</a>で登録</span>
+    <span id="genderCount" style="color:#7a8a6b; font-weight:bold; font-size:13px; margin-left:6px;"></span>
+    <div class="hint" style="margin-top:3px;"><span style="background:#fde3ee;border:1px solid #f3aacb;color:#b5397a;border-radius:10px;padding:1px 7px;">♀</span> <span style="background:#e0edfb;border:1px solid #a8cbf0;color:#2e6bb0;border-radius:10px;padding:1px 7px;">♂</span>　男女は<a href="meibo.html" style="color:#5a8a3c;font-weight:bold;">クラス名簿</a>で登録</div>
   </div>
 
   <div class="board-label">前（こくばん）</div>
@@ -383,7 +388,7 @@ function placeCluster(seats,activeSet,size,cols,rows,m){
   return null;
 }
 const PRIO={ balance:{apart:2,close:1,front:1}, apart:{apart:50,close:1,front:1}, close:{apart:2,close:50,front:1}, front:{apart:2,close:1,front:50} };
-function generate(names,cols,rows,apartGroups,closeGroups,frontSet,apartModes,nearModes,fixed,priority){
+function generate(names,cols,rows,apartGroups,closeGroups,frontSet,apartModes,nearModes,fixed,priority,mixGender){
   const total=cols*rows;
   const inactive=buildInactive(total,cols,rows,total-names.length);
   const fixedSet=new Set(fixed.map(f=>f.idx));
@@ -404,8 +409,16 @@ function generate(names,cols,rows,apartGroups,closeGroups,frontSet,apartModes,ne
     let closeV=0;
     closeGroups.forEach(g=>g.forEach(a=>{ if(pos[a]==null) return; if(!g.some(b=>b!==a&&pos[b]!=null&&isClose(pos[a],pos[b],cols,nearModes))) closeV++; }));
     const frontV=frontList.filter(n=>pos[n]!=null && Math.floor(pos[n]/cols)!==0).length;
-    return {pos,apartV,closeV,frontV};
+    let genderV=0;
+    if(mixGender){ // 左右のとなりが同性ならペナルティ＝男女こうごに寄せる
+      for(let i=0;i<seats.length;i++){
+        const n=seats[i]; if(!n||!genderMap[n]) continue;
+        if(i%cols<cols-1){ const rn=seats[i+1]; if(rn && genderMap[rn] && genderMap[rn]===genderMap[n]) genderV++; }
+      }
+    }
+    return {pos,apartV,closeV,frontV,genderV};
   }
+  const wGender = mixGender ? 2 : 0;
 
   let best=null,bestScore=Infinity;
   for(let attempt=0;attempt<700;attempt++){
@@ -426,18 +439,18 @@ function generate(names,cols,rows,apartGroups,closeGroups,frontSet,apartModes,ne
     const free=activeSeats.filter(i=>seats[i]===null);
     shuffle(free).slice(0,rest.length).forEach((idx,k)=>seats[idx]=rest[k]);
     const e=evalc(seats);
-    const score=e.apartV*w.apart + e.closeV*w.close + e.frontV*w.front;
+    const score=e.apartV*w.apart + e.closeV*w.close + e.frontV*w.front + e.genderV*wGender;
     if(score<bestScore){ bestScore=score; best=seats; }
     if(score===0) break;
   }
-  const {pos}=evalc(best);
+  const be=evalc(best); const pos=be.pos;
   const violPairs=[];
   apartGroups.forEach(g=>{ for(let i=0;i<g.length;i++)for(let j=i+1;j<g.length;j++){ const a=g[i],b=g[j]; if(pos[a]!=null&&pos[b]!=null&&isClose(pos[a],pos[b],cols,apartModes)) violPairs.push([a,b]); }});
   const farGroups=[];
   closeGroups.forEach(g=>{ const bad=g.some(a=>pos[a]!=null && !g.some(b=>b!==a&&pos[b]!=null&&isClose(pos[a],pos[b],cols,nearModes))); if(bad) farGroups.push(g); });
   const frontSpill=frontList.filter(n=>pos[n]!=null && Math.floor(pos[n]/cols)!==0);
   const clashNames=new Set(violPairs.flat());
-  return {seats:best, violPairs, farGroups, frontSpill, clashNames, inactive};
+  return {seats:best, violPairs, farGroups, frontSpill, clashNames, inactive, genderAdj:be.genderV};
 }
 
 function render(seats,cols,frontSet,flicker,clashNames,inactive){
@@ -468,8 +481,9 @@ function run(){
   const apartModes={ lr:$("avLR").checked, fb:$("avFB").checked, diag:$("avDiag").checked };
   const nearModes={ lr:$("nearLR").checked, fb:$("nearFB").checked, diag:$("nearDiag").checked };
   const priority=$("priority").value;
+  const mixGender = !!($("optMixGender") && $("optMixGender").checked) && Object.keys(genderMap).length>0;
   const {list:fixed, errors:fixedErrors}=readFixed(cols,rows);
-  const {seats,violPairs,farGroups,frontSpill,clashNames,inactive}=generate(names,cols,rows,apartGroups,closeGroups,frontSelected,apartModes,nearModes,fixed,priority);
+  const {seats,violPairs,farGroups,frontSpill,clashNames,inactive,genderAdj}=generate(names,cols,rows,apartGroups,closeGroups,frontSelected,apartModes,nearModes,fixed,priority,mixGender);
 
   $("go").disabled=true; $("again").disabled=true; msg.className=""; msg.textContent="シャッフル中…";
   let ticks=0; const pool=names.slice();
@@ -481,11 +495,15 @@ function run(){
     if(++ticks>=12){
       clearInterval(timer);
       render(seats,cols,frontSelected,false,clashNames,inactive);
+      updateGenderCount();
       $("go").disabled=false; $("again").disabled=false;
-      if(violPairs.length===0 && farGroups.length===0 && frontSpill.length===0 && fixedErrors.length===0){
+      if(violPairs.length===0 && farGroups.length===0 && frontSpill.length===0 && fixedErrors.length===0 && (!mixGender || genderAdj===0)){
         msg.className="ok"; msg.textContent="席替え完了！ 条件もぜんぶクリア🌱";
       } else {
         const parts=["席替えはできました。ただ、ぜんぶの条件は満たしきれませんでした👇"];
+        if(mixGender && genderAdj>0){
+          parts.push(`◆ 男女こうごにできなかったとなり：${genderAdj}組\n▶ よこの人数を変える／「離す」条件を減らすと、そろいやすくなります。`);
+        }
         if(fixedErrors.length){
           parts.push("◆ 固定できなかった：\n"+fixedErrors.map(e=>`　・${e}`).join("\n"));
         }
@@ -532,7 +550,8 @@ function snapshotInputs(){
     apartModes:{lr:$("avLR").checked,fb:$("avFB").checked,diag:$("avDiag").checked},
     nearModes:{lr:$("nearLR").checked,fb:$("nearFB").checked,diag:$("nearDiag").checked},
     apart:readGroupsFrom("groups"), close:readGroupsFrom("closeGroups"),
-    fixed:rawFixed(), front:[...frontSelected] };
+    fixed:rawFixed(), front:[...frontSelected],
+    mixGender: !!($("optMixGender") && $("optMixGender").checked) };
 }
 function persist(){ if(restoring) return; try{ localStorage.setItem(LS_KEY, JSON.stringify({...snapshotInputs(), result:lastResult})); }catch(e){} }
 function applyState(s){
@@ -547,6 +566,7 @@ function applyState(s){
   $("closeGroups").innerHTML=""; (s.close||[]).forEach(g=>addGroupTo("closeGroups","この子たちを学び合いに：",g));
   $("fixedRows").innerHTML=""; (s.fixed||[]).forEach(f=>addFixed(f.name,f.col,f.row));
   frontSelected=new Set(s.front||[]); buildFrontChips();
+  if($("optMixGender")) $("optMixGender").checked=!!s.mixGender;
   lastResult=s.result||null;
   updateLayoutInfo(); restoring=false;
 }
@@ -596,7 +616,18 @@ const GENDER_KEY="sensei_gender_v1";
 function loadGender(){ try{ const o=JSON.parse(localStorage.getItem(GENDER_KEY)); return (o&&o.gender&&typeof o.gender==="object")?o.gender:{}; }catch(e){ return {}; } }
 let genderMap=loadGender();   // {名前:"f"|"m"}
 function reRenderSeats(){ if(lastResult&&lastResult.seats){ render(lastResult.seats, lastResult.cols||(parseInt($("cols").value)||6), frontSelected, false, new Set(lastResult.clash||[]), new Set(lastResult.inactive||[])); } }
-function refreshGenderUI(){ $("genderCtl").style.display = Object.keys(genderMap).length ? "block" : "none"; reRenderSeats(); }
+function updateGenderCount(){
+  const el=$("genderCount"); if(!el) return;
+  const names=rosterNames(); let f=0,m=0;
+  names.forEach(n=>{ if(genderMap[n]==="f")f++; else if(genderMap[n]==="m")m++; });
+  el.textContent = (f||m) ? `♀${f}人・♂${m}人` : "";
+}
+function refreshGenderUI(){
+  const has=Object.keys(genderMap).length>0;
+  $("genderCtl").style.display = has ? "block" : "none";
+  const w=$("mixGenderWrap"); if(w) w.style.display = has ? "block" : "none";
+  updateGenderCount(); reRenderSeats();
+}
 function meiboFlash(t,warn){ const el=$("meiboMsg"); el.textContent=t; el.style.color=warn?"#b9622a":"#3f6b27"; }
 $("meiboLoad").onclick=()=>{
   const m=loadMeibo();

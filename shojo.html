@@ -90,20 +90,21 @@
 
   /* ── 賞状（白地＋金の二重罫＋四隅の金飾り。高級感重視・すべてベクター） ── */
   /* 文字サイズは JS が紙幅に比例して設定（画面＝要素幅／印刷＝A4実寸） */
-  .cert{ --gold:#b0903e; --gold2:#caa44e; --pap:#fffdf8;
+  .cert{ --gold:#b0903e; --gold2:#caa44e; --pap:#ffffff;
     width:100%; max-width:760px; aspect-ratio:297/210; background:var(--pap);
     box-shadow:0 10px 30px rgba(60,50,20,.16);
     /* 賞状は明朝体で格式を出す */
     font-family:"Hiragino Mincho ProN","Hiragino Mincho Pro","Yu Mincho",YuMincho,"Noto Serif JP","Shippori Mincho","Songti SC",serif; }
-  /* 二重の金罫（外＝太め／内＝細） */
-  .cert .frame{ position:absolute; inset:3.6%; border:0.13em solid var(--gold); pointer-events:none; }
-  .cert .frame::before{ content:""; position:absolute; inset:0.6em; border:0.045em solid var(--gold2); }
-  /* 四隅の金飾り（左上を基準に各隅へ反転配置） */
-  .cert .corner{ position:absolute; width:8.5%; aspect-ratio:1; }
-  .cert .corner.tl{ left:2.7%; top:2.7%; }
-  .cert .corner.tr{ right:2.7%; top:2.7%; transform:scaleX(-1); }
-  .cert .corner.bl{ left:2.7%; bottom:2.7%; transform:scaleY(-1); }
-  .cert .corner.br{ right:2.7%; bottom:2.7%; transform:scale(-1,-1); }
+  /* 金の二重罫（外＝太め／内＝細）。純白地にくっきり */
+  .cert .frame{ position:absolute; inset:3.6%; border:0.16em solid var(--gold); pointer-events:none; }
+  .cert .frame::before{ content:""; position:absolute; inset:0.55em; border:0.05em solid var(--gold2); }
+  /* 四隅に上品な金の菱形（外罫の角にちょこんと） */
+  .cert .corner{ position:absolute; width:.62em; height:.62em; background:var(--gold);
+    transform:translate(-50%,-50%) rotate(45deg); box-shadow:0 0 0 .06em var(--pap); }
+  .cert .corner.tl{ left:3.6%; top:3.6%; }
+  .cert .corner.tr{ left:96.4%; top:3.6%; }
+  .cert .corner.bl{ left:3.6%; top:96.4%; }
+  .cert .corner.br{ left:96.4%; top:96.4%; }
   .cert .body{ position:absolute; display:flex; z-index:1; }
   /* 表題下の仕切り線 */
   .cert .c-divider{ width:36%; height:1em; color:var(--gold); }
@@ -349,16 +350,6 @@
   <linearGradient id="goldgrad" x1="0" y1="0" x2="1" y2="1">
     <stop offset="0" stop-color="#d8bd72"/><stop offset=".5" stop-color="#a07e30"/><stop offset="1" stop-color="#c9a44e"/>
   </linearGradient>
-  <symbol id="ornCorner" viewBox="0 0 110 110">
-    <g fill="none" stroke="url(#goldgrad)" stroke-width="2.1" stroke-linecap="round">
-      <path d="M8 70 C8 33 33 8 70 8"/>
-      <path d="M8 50 C8 27 27 8 50 8" stroke-width="1.2"/>
-      <path d="M24 24 c9 -1 15 4 16 11 c1 -7 7 -12 15 -11"/>
-      <path d="M40 16 c0 0 6 5 6 12"/>
-      <path d="M16 40 c0 0 5 6 12 6"/>
-    </g>
-    <circle cx="13" cy="13" r="2.6" fill="url(#goldgrad)"/>
-  </symbol>
   <symbol id="divider" viewBox="0 0 200 16">
     <g stroke="url(#goldgrad)" stroke-width="1.4" fill="url(#goldgrad)">
       <line x1="14" y1="8" x2="86" y2="8"/><line x1="114" y1="8" x2="186" y2="8"/>
@@ -450,10 +441,7 @@ function certNode(d, rcp){
   const dateHTML   = dateRaw   ? date   : ('令和'+blank+'年'+blank+'月'+blank+'日');
   el.innerHTML = `
     <div class="frame"></div>
-    <svg class="corner tl"><use href="#ornCorner"/></svg>
-    <svg class="corner tr"><use href="#ornCorner"/></svg>
-    <svg class="corner bl"><use href="#ornCorner"/></svg>
-    <svg class="corner br"><use href="#ornCorner"/></svg>
+    <i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i>
     <div class="body">
       <div class="c-title">${title}</div>
       <svg class="c-divider"><use href="#divider"/></svg>
