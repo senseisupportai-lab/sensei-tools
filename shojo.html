@@ -95,16 +95,22 @@
     box-shadow:0 10px 30px rgba(60,50,20,.16);
     /* 賞状は明朝体で格式を出す */
     font-family:"Hiragino Mincho ProN","Hiragino Mincho Pro","Yu Mincho",YuMincho,"Noto Serif JP","Shippori Mincho","Songti SC",serif; }
-  /* 金の二重罫（外＝太め／内＝細）。純白地にくっきり */
-  .cert .frame{ position:absolute; inset:3.6%; border:0.16em solid var(--gold); pointer-events:none; }
-  .cert .frame::before{ content:""; position:absolute; inset:0.55em; border:0.05em solid var(--gold2); }
-  /* 四隅に上品な金の菱形（外罫の角にちょこんと） */
-  .cert .corner{ position:absolute; width:.62em; height:.62em; background:var(--gold);
-    transform:translate(-50%,-50%) rotate(45deg); box-shadow:0 0 0 .06em var(--pap); }
+  /* 金の二重罫。外罫はメタリックなグラデで艶を出す */
+  .cert .frame{ position:absolute; inset:3.6%; border:0.2em solid var(--gold); pointer-events:none;
+    border-image:linear-gradient(135deg,#e9d492 0%,#a67f2c 26%,#f3e3a6 50%,#9c7a2e 74%,#e3ca82 100%) 1; }
+  .cert .frame::before{ content:""; position:absolute; inset:0.6em; border:0.05em solid var(--gold2); }
+  /* 四隅：金の菱形＋外周に細い菱形の輪郭（二重菱形） */
+  .cert .corner{ position:absolute; width:.6em; height:.6em; background:var(--gold);
+    transform:translate(-50%,-50%) rotate(45deg); box-shadow:0 0 0 .07em var(--pap); }
+  .cert .corner::before{ content:""; position:absolute; inset:-0.34em; border:0.05em solid var(--gold); }
   .cert .corner.tl{ left:3.6%; top:3.6%; }
   .cert .corner.tr{ left:96.4%; top:3.6%; }
   .cert .corner.bl{ left:3.6%; top:96.4%; }
   .cert .corner.br{ left:96.4%; top:96.4%; }
+  /* 金のロゼット印（公式感） */
+  .cert .seal{ position:absolute; width:11.5%; aspect-ratio:1; z-index:1; opacity:.92; }
+  .cert.yoko .seal{ right:11%; bottom:11.5%; }
+  .cert.tate .seal{ right:12%; bottom:13%; }
   .cert .body{ position:absolute; display:flex; z-index:1; }
   /* 表題下の仕切り線 */
   .cert .c-divider{ width:36%; height:1em; color:var(--gold); }
@@ -350,6 +356,14 @@
   <linearGradient id="goldgrad" x1="0" y1="0" x2="1" y2="1">
     <stop offset="0" stop-color="#d8bd72"/><stop offset=".5" stop-color="#a07e30"/><stop offset="1" stop-color="#c9a44e"/>
   </linearGradient>
+  <symbol id="seal" viewBox="0 0 100 100">
+    <g fill="none" stroke="url(#goldgrad)" stroke-linecap="round">
+      <circle cx="50" cy="50" r="31" stroke-width="4.2" stroke-dasharray="0.5 4.6"/>
+      <circle cx="50" cy="50" r="25.5" stroke-width="2"/>
+      <circle cx="50" cy="50" r="21.5" stroke-width="0.7"/>
+    </g>
+    <path fill="url(#goldgrad)" d="M50 31.5 l3.7 10.1 10.7 0.2 -8.5 6.6 3.1 10.3 -9-6 -9 6 3.1-10.3 -8.5-6.6 10.7-0.2z"/>
+  </symbol>
   <symbol id="divider" viewBox="0 0 200 16">
     <g stroke="url(#goldgrad)" stroke-width="1.4" fill="url(#goldgrad)">
       <line x1="14" y1="8" x2="86" y2="8"/><line x1="114" y1="8" x2="186" y2="8"/>
@@ -442,6 +456,7 @@ function certNode(d, rcp){
   el.innerHTML = `
     <div class="frame"></div>
     <i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i>
+    <svg class="seal"><use href="#seal"/></svg>
     <div class="body">
       <div class="c-title">${title}</div>
       <svg class="c-divider"><use href="#divider"/></svg>
