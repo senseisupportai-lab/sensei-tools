@@ -72,31 +72,19 @@
   .cat:first-of-type{ margin-top:6px; }
   .cat .cnt{ color:var(--chalk-dim); font-weight:normal; font-size:11.5px; letter-spacing:0; }
   .cat:first-of-type{ margin-top:14px; }
-  /* カテゴリのタブ（ボタン切り替え） */
-  .tabs{ display:flex; flex-wrap:wrap; gap:8px; justify-content:center; margin-top:6px; }
-  .tab{ background:rgba(245,241,232,.06); border:1.6px dashed rgba(245,241,232,.5); color:var(--chalk);
-        border-radius:22px; padding:8px 15px; font-size:13.5px; font-weight:bold; cursor:pointer; font-family:inherit;
-        display:inline-flex; align-items:center; gap:6px; transition:background .1s,border-color .1s,color .1s; }
-  .tab:hover{ border-color:var(--yellow); }
-  .tab.on{ background:var(--yellow); border-color:var(--yellow); color:var(--green2); border-style:solid; }
-  .catsec{ display:none; }
-  .catsec.show{ display:block; }
-  /* 一覧（目次） */
-  .toc{ margin-top:12px; }
-  .tocgroup{ margin-top:16px; }
-  .tocgroup:first-child{ margin-top:8px; }
-  .toch{ color:var(--yellow); font-size:13px; font-weight:bold; letter-spacing:.04em; padding-left:6px; margin-bottom:7px; opacity:.95; }
-  .tocitem{ display:flex; align-items:center; gap:11px; text-decoration:none; color:var(--chalk);
-    padding:9px 12px; border-radius:11px; border:1.4px dashed rgba(245,241,232,.4);
-    background:rgba(245,241,232,.04); margin-bottom:7px; transition:background .1s,border-color .1s,transform .1s; }
-  .tocitem:hover{ border-color:var(--yellow); background:rgba(245,241,232,.1); transform:translateX(2px); }
-  .tocitem .em{ font-size:22px; line-height:1; flex:0 0 auto; }
-  .tocitem .tx b{ font-size:14.5px; color:var(--chalk); }
-  .tocitem .tx span{ display:block; font-size:11.5px; color:var(--chalk-dim); line-height:1.5; }
-  .tocitem .arr{ margin-left:auto; color:var(--chalk-dim); font-weight:bold; }
-  /* 開発中（クリック不可） */
-  .tocitem.soon{ opacity:.55; cursor:default; pointer-events:none; }
-  .tocitem.soon .arr{ font-size:11px; background:rgba(245,241,232,.22); color:var(--chalk); border-radius:20px; padding:2px 9px; }
+  /* カテゴリのプルダウン（アコーディオン） */
+  .acc{ margin-top:12px; border:1.6px dashed rgba(245,241,232,.5); border-radius:14px;
+        background:rgba(245,241,232,.04); overflow:hidden; }
+  .acc>summary{ list-style:none; cursor:pointer; user-select:none; display:flex; align-items:center; gap:10px;
+        padding:14px 16px; color:var(--chalk); font-weight:bold; font-size:15.5px; }
+  .acc>summary::-webkit-details-marker{ display:none; }
+  .acc>summary:hover{ background:rgba(245,241,232,.07); }
+  .acc>summary .ac-em{ font-size:23px; line-height:1; flex:0 0 auto; }
+  .acc>summary .ac-sub{ color:var(--chalk-dim); font-weight:normal; font-size:11.5px; letter-spacing:0; }
+  .acc>summary .ac-cnt{ margin-left:auto; color:var(--chalk-dim); font-weight:normal; font-size:11.5px; letter-spacing:0; }
+  .acc>summary .ac-chev{ color:var(--yellow); font-weight:bold; font-size:13px; transition:transform .15s; }
+  .acc[open]>summary .ac-chev{ transform:rotate(180deg); }
+  .acc .tools{ margin:2px 14px 16px; }
 
   /* ── ツール一覧（黒板の上にチョークで書いたカード） ── */
   .tools{ display:grid; grid-template-columns:repeat(auto-fill,minmax(240px,1fr)); gap:14px; margin-top:14px; }
@@ -174,44 +162,8 @@
       <span class="meibo-arr">名簿をひらく →</span>
     </a>
 
-    <div class="tabs">
-      <button class="tab on" type="button" data-cat="all">📋 一覧</button>
-      <button class="tab" type="button" data-cat="print">📄 プリント</button>
-      <button class="tab" type="button" data-cat="lesson">🔔 授業中</button>
-      <button class="tab" type="button" data-cat="class">🧑‍🏫 クラスづくり</button>
-    </div>
-
-    <div class="catsec show" data-cat="all">
-      <div class="cat">📋 ぜんぶの道具 <span class="cnt">目次（タップでひらく）</span></div>
-      <div class="toc">
-        <div class="tocgroup">
-          <div class="toch">📄 プリントをつくる</div>
-          <a class="tocitem" href="keisan.html"><span class="em">🧮</span><span class="tx"><b>計算プリント</b><span>四則の計算プリントを自動生成（答えも）</span></span><span class="arr">→</span></a>
-          <a class="tocitem" href="hyakumasu.html"><span class="em">💯</span><span class="tx"><b>百ます計算</b><span>毎回ちがう百ますを自動生成・タイム計測に</span></span><span class="arr">→</span></a>
-          <a class="tocitem" href="kanji.html"><span class="em">📝</span><span class="tx"><b>漢字プリント</b><span>学年の漢字で書き取りを自動生成（答えも）</span></span><span class="arr">→</span></a>
-        </div>
-        <div class="tocgroup">
-          <div class="toch">🔔 授業中につかう</div>
-          <a class="tocitem" href="timer.html"><span class="em">⏱️</span><span class="tx"><b>黒板タイマー</b><span>黒板風タイマー。音OFFでも光で終了通知</span></span><span class="arr">→</span></a>
-          <a class="tocitem" href="roulette.html"><span class="em">🎯</span><span class="tx"><b>ルーレット指名</b><span>回して当てる・欠席除外・複数人指名</span></span><span class="arr">→</span></a>
-        </div>
-        <div class="tocgroup">
-          <div class="toch">🧑‍🏫 クラスづくり</div>
-          <a class="tocitem" href="sekigae.html"><span class="em">🪑</span><span class="tx"><b>席替えツール</b><span>配慮もまるごとおまかせで席替え</span></span><span class="arr">→</span></a>
-          <a class="tocitem" href="touban.html"><span class="em">🙋</span><span class="tx"><b>係・当番ぎめ</b><span>公平に自動決定・印刷／掲示・ローテーション</span></span><span class="arr">→</span></a>
-          <a class="tocitem" href="han.html"><span class="em">👥</span><span class="tx"><b>班・グループ分け</b><span>なるべく均等に・別の班に配慮・班長ぎめ・黒板／印刷</span></span><span class="arr">→</span></a>
-          <span class="tocitem soon" aria-disabled="true" title="開発中です。もうすぐ公開します"><span class="em">🏆</span><span class="tx"><b>賞状・がんばりカード</b><span>賞状を即印刷・名簿で全員ぶん一括</span></span><span class="arr">開発中</span></span>
-          <a class="tocitem" href="waku.html"><span class="em">🪧</span><span class="tx"><b>等分枠プリント</b><span>用紙を等分のマスに割って印刷（係カード・名札・くじ）</span></span><span class="arr">→</span></a>
-        </div>
-        <div class="tocgroup">
-          <div class="toch">📋 土台</div>
-          <a class="tocitem" href="meibo.html"><span class="em">📋</span><span class="tx"><b>クラス名簿</b><span>名前を一度登録→各ツールでワンタップ呼び出し</span></span><span class="arr">→</span></a>
-        </div>
-      </div>
-    </div>
-
-    <div class="catsec" data-cat="print">
-    <div class="cat">📄 プリントをつくる <span class="cnt">印刷してそのまま使える</span></div>
+    <details class="acc" open>
+    <summary><span class="ac-em">📄</span>プリントをつくる<span class="ac-sub">印刷してそのまま使える</span><span class="ac-cnt">3つ</span><span class="ac-chev">▾</span></summary>
     <div class="tools">
       <a class="card" href="keisan.html">
         <div class="top"><span class="emoji">🧮</span><h2>計算プリント</h2></div>
@@ -231,10 +183,10 @@
         <span class="open">ひらく →</span>
       </a>
     </div>
-    </div>
+    </details>
 
-    <div class="catsec" data-cat="lesson">
-    <div class="cat">🔔 授業中につかう <span class="cnt">その場でパッと</span></div>
+    <details class="acc">
+    <summary><span class="ac-em">🔔</span>授業中につかう<span class="ac-sub">その場でパッと</span><span class="ac-cnt">2つ</span><span class="ac-chev">▾</span></summary>
     <div class="tools">
       <a class="card" href="timer.html">
         <div class="top"><span class="emoji">⏱️</span><h2>黒板タイマー</h2></div>
@@ -248,10 +200,10 @@
         <span class="open">ひらく →</span>
       </a>
     </div>
-    </div>
+    </details>
 
-    <div class="catsec" data-cat="class">
-    <div class="cat">🧑‍🏫 クラスづくり <span class="cnt">学級経営のひと工夫</span></div>
+    <details class="acc">
+    <summary><span class="ac-em">🧑‍🏫</span>クラスづくり<span class="ac-sub">学級経営のひと工夫</span><span class="ac-cnt">5つ</span><span class="ac-chev">▾</span></summary>
     <div class="tools">
       <a class="card" href="sekigae.html">
         <div class="top"><span class="emoji">🪑</span><h2>席替えツール</h2></div>
@@ -283,7 +235,7 @@
         <span class="open">ひらく →</span>
       </a>
     </div>
-    </div>
+    </details>
   </div>
   <div class="tray"></div>
 
@@ -300,19 +252,6 @@
   </div>
 </div>
 <script>
-/* カテゴリのタブ切り替え（選んだカテゴリだけ表示） */
-(function(){
-  const tabs=[...document.querySelectorAll(".tab")];
-  const secs=[...document.querySelectorAll(".catsec")];
-  function show(cat){
-    tabs.forEach(t=>t.classList.toggle("on", t.dataset.cat===cat));
-    secs.forEach(s=>s.classList.toggle("show", s.dataset.cat===cat));
-    try{ localStorage.setItem("nicchoku_cat", cat); }catch(e){}
-  }
-  tabs.forEach(t=>t.onclick=()=>show(t.dataset.cat));
-  let saved=null; try{ saved=localStorage.getItem("nicchoku_cat"); }catch(e){}
-  show(saved && tabs.some(t=>t.dataset.cat===saved) ? saved : "all");
-})();
 if("serviceWorker" in navigator){ window.addEventListener("load",()=>navigator.serviceWorker.register("sw.js").catch(()=>{})); }
 </script>
 </body>
